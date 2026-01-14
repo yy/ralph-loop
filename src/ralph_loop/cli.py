@@ -51,6 +51,38 @@ def write_config(config: dict) -> None:
         if "allow_paths" in security:
             lines.append(f'allow_paths = "{security["allow_paths"]}"')
 
+    if "loop" in config:
+        if lines:
+            lines.append("")  # Blank line between sections
+        lines.append("[loop]")
+        loop = config["loop"]
+        if "max_iterations" in loop:
+            lines.append(f"max_iterations = {loop['max_iterations']}")
+        if "tasks_file" in loop:
+            lines.append(f'tasks_file = "{loop["tasks_file"]}"')
+        if "prompt_file" in loop:
+            lines.append(f'prompt_file = "{loop["prompt_file"]}"')
+
+    if "output" in config:
+        if lines:
+            lines.append("")  # Blank line between sections
+        lines.append("[output]")
+        output = config["output"]
+        if "log_file" in output:
+            lines.append(f'log_file = "{output["log_file"]}"')
+        if "verbose" in output:
+            lines.append(f"verbose = {'true' if output['verbose'] else 'false'}")
+
+    if "session" in config:
+        if lines:
+            lines.append("")  # Blank line between sections
+        lines.append("[session]")
+        session = config["session"]
+        if "continue_session" in session:
+            lines.append(
+                f"continue_session = {'true' if session['continue_session'] else 'false'}"
+            )
+
     config_path.write_text("\n".join(lines) + "\n")
 
 
@@ -66,18 +98,18 @@ def run(
     prompt_file: Optional[Path] = typer.Option(
         None, "-f", "--file", help="Prompt file (default: LOOP-PROMPT.md)"
     ),
-    tasks_file: Path = typer.Option(
-        Path("TASKS.md"),
+    tasks_file: Optional[Path] = typer.Option(
+        None,
         "--tasks",
         help="Tasks file for stop condition (stop when all tasks complete)",
     ),
-    max_iterations: int = typer.Option(
-        10, "-n", "--max-iterations", help="Max iterations"
+    max_iterations: Optional[int] = typer.Option(
+        None, "-n", "--max-iterations", help="Max iterations"
     ),
     yolo: bool = typer.Option(
-        False,
-        "--yolo",
-        help="Skip all permission prompts (passes --dangerously-skip-permissions to claude)",
+        True,
+        "--yolo/--no-yolo",
+        help="Skip all permission prompts (default: enabled)",
     ),
     allow_paths: Optional[str] = typer.Option(
         None,
@@ -110,12 +142,37 @@ def run(
     # Read config file and apply settings (CLI flags override config)
     config = read_config()
     security_config = config.get("security", {})
+    loop_config = config.get("loop", {})
 
-    # Apply config values if CLI flags not explicitly set
+    # Apply security config values if CLI flags not explicitly set
     if not yolo and security_config.get("yolo", False):
         yolo = True
     if allow_paths is None and security_config.get("allow_paths"):
         allow_paths = security_config.get("allow_paths")
+
+    # Apply loop config values with defaults
+    if max_iterations is None:
+        max_iterations = loop_config.get("max_iterations", 10)
+    if tasks_file is None:
+        tasks_file = Path(loop_config.get("tasks_file", "TASKS.md"))
+    if prompt_file is None:
+        config_prompt_file = loop_config.get("prompt_file")
+        if config_prompt_file:
+            prompt_file = Path(config_prompt_file)
+
+    # Apply output config values if CLI flags not explicitly set
+    output_config = config.get("output", {})
+    if log_file is None and output_config.get("log_file"):
+        log_file = Path(output_config.get("log_file"))
+    if not show_progress and output_config.get("verbose", False):
+        show_progress = True
+
+    # Apply session config values if CLI flags not explicitly set
+    session_config = config.get("session", {})
+    if not continue_session and not reset_session:
+        # Neither flag set - use config if available
+        if session_config.get("continue_session", False):
+            continue_session = True
 
     # Check for mutually exclusive flags
     if continue_session and reset_session:

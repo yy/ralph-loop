@@ -26,7 +26,7 @@ uv add ralph-loop
 ralph-loop init
 
 # Run the loop
-ralph-loop run --yolo
+ralph-loop run
 ```
 
 ## How It Works
@@ -38,8 +38,8 @@ ralph-loop run --yolo
 ## Options
 
 ```bash
-ralph-loop run                    # Run with defaults
-ralph-loop run --yolo             # Skip permission prompts
+ralph-loop run                    # Run (skips permission prompts by default)
+ralph-loop run --no-yolo          # Ask for permissions
 ralph-loop run -n 5               # Max 5 iterations
 ralph-loop run --continue         # Keep context between iterations
 ```
