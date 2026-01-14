@@ -17,7 +17,7 @@ Build a Python CLI tool for configuring and running simple agent loops with guar
 
 ## Rules
 
-- Only work on ONE task per session
+- Only work on ONE task per session. If you discover a new task, add them to TASKS.md
 - NEVER mark a task complete unless tests pass
 - If blocked, add a note to TASKS.md and move to the next task
 - Keep documentation in sync with implementation

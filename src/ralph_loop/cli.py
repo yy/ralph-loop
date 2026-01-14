@@ -25,6 +25,9 @@ def run(
     tasks_file: Path = typer.Option(
         Path("TASKS.md"), "--tasks", help="Tasks file to check for completion"
     ),
+    stop_file: Optional[Path] = typer.Option(
+        None, "--stop-file", help="Exit when this file exists"
+    ),
     max_iterations: int = typer.Option(
         10, "-n", "--max-iterations", help="Max iterations"
     ),
@@ -38,9 +41,27 @@ def run(
         "--allow-paths",
         help="Comma-separated paths to allow writing (e.g., 'src/,tests/')",
     ),
+    continue_session: bool = typer.Option(
+        False,
+        "--continue",
+        help="Maintain conversation context between iterations (pass -c to claude after first iteration)",
+    ),
+    reset_session: bool = typer.Option(
+        False,
+        "--reset",
+        help="Start fresh each iteration (default behavior)",
+    ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would run"),
 ) -> None:
     """Run the agent loop. Stops when all tasks in TASKS.md are complete."""
+    # Check for mutually exclusive flags
+    if continue_session and reset_session:
+        typer.echo(
+            "Error: --continue and --reset are mutually exclusive. Cannot use both.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
     # Determine prompt source
     if prompt is None:
         if prompt_file is None:
@@ -60,21 +81,39 @@ def run(
                 cmd.extend(["--allowedTools", f"Write:{path.strip()}*"])
         typer.echo(f"Would run {max_iterations} iterations")
         typer.echo(f"Command: {' '.join(cmd)}")
+        if stop_file:
+            typer.echo(f"Stop file: {stop_file}")
+        if continue_session:
+            typer.echo(
+                "Session mode: continue (will pass -c to claude after first iteration)"
+            )
+        else:
+            typer.echo("Session mode: reset (fresh session each iteration)")
         typer.echo(f"Prompt:\n---\n{prompt}\n---")
         return
 
     for i in range(1, max_iterations + 1):
-        # Check if all tasks are done before running
+        # Check stop conditions before running
+        if file_exists_check(stop_file):
+            typer.echo(f"\nStop file '{stop_file}' exists. Exiting.")
+            break
+
         if not tasks_remaining(tasks_file):
             typer.echo(f"\nAll tasks in {tasks_file} are complete. Exiting.")
             break
 
         typer.echo(f"\n{'=' * 60}")
         typer.echo(f"Iteration {i}/{max_iterations}")
+        current_task = get_current_task(tasks_file)
+        if current_task:
+            typer.echo(f"Current task: {current_task}")
         typer.echo(f"{'=' * 60}\n")
 
         # Run claude
         cmd = ["claude", "--print", "-p", prompt]
+        # After first iteration, continue session if requested
+        if continue_session and i > 1:
+            cmd.append("-c")
         if yolo:
             cmd.append("--dangerously-skip-permissions")
         if allow_paths:
@@ -89,7 +128,11 @@ def run(
             )
             raise typer.Exit(1)
 
-        # Check if all tasks are done after running
+        # Check stop conditions after running
+        if file_exists_check(stop_file):
+            typer.echo(f"\nStop file '{stop_file}' exists. Exiting.")
+            break
+
         if not tasks_remaining(tasks_file):
             typer.echo(f"\nAll tasks in {tasks_file} are complete. Exiting.")
             break
@@ -111,6 +154,45 @@ def tasks_remaining(tasks_file: Path = Path("TASKS.md")) -> bool:
     # Find unchecked tasks: - [ ]
     unchecked = re.findall(r"^- \[ \]", content, re.MULTILINE)
     return len(unchecked) > 0
+
+
+def get_current_task(tasks_file: Path = Path("TASKS.md")) -> Optional[str]:
+    """Get the first incomplete task from TASKS.md.
+
+    Args:
+        tasks_file: Path to the tasks file.
+
+    Returns:
+        The task description (without the checkbox), or None if no tasks remain.
+    """
+    if not tasks_file.exists():
+        return None
+
+    content = tasks_file.read_text()
+    if not content:
+        return None
+
+    import re
+
+    # Find first unchecked task: - [ ] task description
+    match = re.search(r"^- \[ \] (.+)$", content, re.MULTILINE)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
+def file_exists_check(stop_file: Optional[Path]) -> bool:
+    """Check if the stop file exists.
+
+    Args:
+        stop_file: Path to check, or None if no stop file is configured.
+
+    Returns:
+        True if stop_file is set and exists, False otherwise.
+    """
+    if stop_file is None:
+        return False
+    return stop_file.exists()
 
 
 def run_claude_for_planning(meta_prompt: str) -> Optional[str]:
