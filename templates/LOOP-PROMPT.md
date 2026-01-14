@@ -17,9 +17,9 @@
 
 ## Rules
 
-- Only work on ONE task per session
+- Only work on ONE task per session. If you discover some tasks, add them to TASKS.md.
+- If blocked, add a note to TASKS.md and move to the task that's blocking the current. 
 - NEVER mark a task complete unless tests pass
-- If blocked, add a note to TASKS.md and move to the next task
 - Keep documentation in sync with implementation
 - New tasks go in the Todo section with clear descriptions
 

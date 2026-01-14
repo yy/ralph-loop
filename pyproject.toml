@@ -19,3 +19,8 @@ ralph-loop = "ralph_loop.cli:app"
 [build-system]
 requires = ["uv_build>=0.8.12,<0.9.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
