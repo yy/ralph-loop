@@ -43,5 +43,23 @@ Settings are stored in `.ralph-loop.toml` and read by the `run` command:
 
 **[loop] section:**
 - `max_iterations`: Default number of loop iterations (default: 10)
+- `agent`: Which agent to use (default: "claude"). Options: claude, codex, gemini
 
 CLI flags override config file settings.
+
+### Agent Abstraction Layer
+The `agents` module provides a pluggable architecture for different coding agents:
+
+- `Agent`: Protocol (interface) that all agents must implement
+- `AgentConfig`: Dataclass for passing configuration (prompt, yolo, allow_paths, continue_session)
+- `AgentResult`: Dataclass for agent output (stdout, stderr, return_code)
+- `get_agent(name)`: Get an agent by name (default: "claude")
+- `get_available_agents()`: List registered agents
+- `@register_agent`: Decorator to register new agent implementations
+
+Agent implementations live in separate files (e.g., `agents_claude.py`, `agents_codex.py`).
+
+**Available agents:**
+- `claude`: Claude Code CLI (default)
+- `codex`: OpenAI Codex CLI
+- `gemini`: Google Gemini CLI

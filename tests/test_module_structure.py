@@ -66,3 +66,15 @@ class TestModuleStructure:
         assert callable(tasks_remaining)
         assert callable(get_current_task)
         assert callable(parse_markdown_from_output)
+
+    def test_agents_module_exists_and_importable(self):
+        """Agents module should be importable."""
+        from ralph_loop import agents
+
+        assert hasattr(agents, "Agent")
+        assert hasattr(agents, "AgentConfig")
+        assert hasattr(agents, "AgentResult")
+        assert hasattr(agents, "get_agent")
+        assert hasattr(agents, "get_available_agents")
+        assert callable(agents.get_agent)
+        assert callable(agents.get_available_agents)

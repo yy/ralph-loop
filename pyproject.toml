@@ -3,15 +3,42 @@ name = "ralph-loop"
 version = "0.1.0"
 description = "Ralph Wiggum loop for agents"
 readme = "README.md"
+license = "MIT"
 authors = [
     { name = "YY Ahn", email = "yongyeol@gmail.com" }
 ]
 requires-python = ">=3.12"
+keywords = [
+    "ai-agents",
+    "automation",
+    "claude",
+    "codex",
+    "gemini",
+    "loop",
+    "task-runner",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
     "typer>=0.9.0",
     "tomli>=2.0.0;python_version<'3.11'",
     "tomli-w>=1.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yy/ralph-loop"
+Repository = "https://github.com/yy/ralph-loop"
+Issues = "https://github.com/yy/ralph-loop/issues"
 
 [project.scripts]
 ralph-loop = "ralph_loop.cli:app"

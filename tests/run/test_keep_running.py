@@ -24,7 +24,7 @@ class TestKeepRunningFlag:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("ralph_loop.cli.subprocess.run") as mock_run:
+        with patch("ralph_loop.agents_claude.subprocess.run") as mock_run:
             result = runner.invoke(
                 app,
                 [
@@ -57,7 +57,7 @@ class TestKeepRunningFlag:
             call_count += 1
             return MagicMock(returncode=0, stdout="", stderr="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch("ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run):
             result = runner.invoke(
                 app,
                 [
@@ -94,7 +94,7 @@ class TestKeepRunningFlag:
                 tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout="", stderr="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch("ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run):
             result = runner.invoke(
                 app,
                 [
@@ -120,7 +120,7 @@ class TestKeepRunningFlag:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("ralph_loop.cli.subprocess.run") as mock_run:
+        with patch("ralph_loop.agents_claude.subprocess.run") as mock_run:
             result = runner.invoke(
                 app,
                 [
@@ -230,7 +230,7 @@ class TestKeepRunningConfig:
         try:
             os.chdir(tmp_path)
             with patch(
-                "ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run
+                "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
             ):
                 result = runner.invoke(
                     app,
@@ -265,7 +265,7 @@ class TestKeepRunningConfig:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            with patch("ralph_loop.cli.subprocess.run") as mock_run:
+            with patch("ralph_loop.agents_claude.subprocess.run") as mock_run:
                 result = runner.invoke(
                     app,
                     [

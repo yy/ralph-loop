@@ -1,11 +1,11 @@
 """CLI interface for ralph-loop."""
 
-import subprocess
 from pathlib import Path
 from typing import Optional
 
 import typer
 
+from ralph_loop.agents import AgentConfig, get_agent, get_available_agents
 from ralph_loop.config import (
     CONFIG_FILE,
     get_templates_dir,
@@ -41,6 +41,11 @@ def run(
     ),
     max_iterations: Optional[int] = typer.Option(
         None, "-n", "--max-iterations", help="Max iterations"
+    ),
+    agent: Optional[str] = typer.Option(
+        None,
+        "--agent",
+        help="Agent to use (e.g., 'claude', 'codex', 'gemini')",
     ),
     yolo: bool = typer.Option(
         True,
@@ -110,6 +115,8 @@ def run(
         config_prompt_file = loop_config.get("prompt_file")
         if config_prompt_file:
             prompt_file = Path(config_prompt_file)
+    if agent is None:
+        agent = loop_config.get("agent")  # None means use default (claude)
 
     # Apply output config values if CLI flags not explicitly set
     output_config = config.get("output", {})
@@ -159,6 +166,20 @@ def run(
         raise typer.Exit(1)
     prompt = prompt_file.read_text()
 
+    # Determine agent name for display (None means default which is "claude")
+    agent_name = agent if agent else "claude"
+
+    # Validate agent name if specified
+    if agent is not None:
+        available = get_available_agents()
+        if agent not in available:
+            typer.echo(
+                f"Error: Unknown agent '{agent}'. "
+                f"Available agents: {', '.join(available)}",
+                err=True,
+            )
+            raise typer.Exit(1)
+
     if dry_run:
         cmd = ["claude", "--print", "-p", "<prompt>"]
         if yolo:
@@ -168,6 +189,7 @@ def run(
                 cmd.extend(["--allowedTools", f"Edit:{path.strip()}*"])
                 cmd.extend(["--allowedTools", f"Write:{path.strip()}*"])
         typer.echo(f"Would run {max_iterations} iterations")
+        typer.echo(f"Agent: {agent_name}")
         typer.echo(f"Command: {' '.join(cmd)}")
         typer.echo(f"Stop condition: tasks (check {tasks_file})")
         if keep_running:
@@ -213,37 +235,32 @@ def run(
             typer.echo(f"Current task: {current_task}")
         typer.echo(f"{'=' * 60}\n")
 
-        # Run claude
-        cmd = ["claude", "--print", "-p", prompt]
-        # After first iteration, continue session if requested
-        if continue_session and i > 1:
-            cmd.append("-c")
-        if yolo:
-            cmd.append("--dangerously-skip-permissions")
-        if allow_paths:
-            for path in allow_paths.split(","):
-                cmd.extend(["--allowedTools", f"Edit:{path.strip()}*"])
-                cmd.extend(["--allowedTools", f"Write:{path.strip()}*"])
-        try:
-            result = subprocess.run(cmd, check=False, capture_output=True, text=True)
-            # Print output to console
-            if result.stdout:
-                typer.echo(result.stdout)
-            if result.stderr:
-                typer.echo(result.stderr, err=True)
-            # Log output to file if requested
-            if log_file:
-                write_log_entry(log_file, i, result.stdout or "")
-            # Show file changes if requested
-            if show_progress:
-                success, changes = get_file_changes()
-                typer.echo("\n--- File Changes ---")
-                typer.echo(changes)
-        except FileNotFoundError:
-            typer.echo(
-                "Error: 'claude' command not found. Is Claude Code installed?", err=True
-            )
+        # Run the agent
+        agent_instance = get_agent(agent)
+        agent_config = AgentConfig(
+            prompt=prompt,
+            yolo=yolo,
+            allow_paths=allow_paths,
+            # After first iteration, continue session if requested
+            continue_session=continue_session and i > 1,
+        )
+        result = agent_instance.run(agent_config)
+        # Print output to console
+        if result.stdout:
+            typer.echo(result.stdout)
+        if result.stderr:
+            typer.echo(result.stderr, err=True)
+        # Exit on agent error (e.g., command not found)
+        if result.return_code != 0 and "not found" in result.stderr.lower():
             raise typer.Exit(1)
+        # Log output to file if requested
+        if log_file:
+            write_log_entry(log_file, i, result.stdout or "")
+        # Show file changes if requested
+        if show_progress:
+            success, changes = get_file_changes()
+            typer.echo("\n--- File Changes ---")
+            typer.echo(changes)
 
         # Check stop conditions after running
         exit_message = check_stop_conditions()

@@ -40,7 +40,7 @@ class TestContinueFlag:
             return MagicMock(returncode=0)
 
         with patch(
-            "ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ) as mock_run:
             result = runner.invoke(
                 app,
@@ -82,7 +82,7 @@ class TestContinueFlag:
             return MagicMock(returncode=0)
 
         with patch(
-            "ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ) as mock_run:
             result = runner.invoke(
                 app,
@@ -130,7 +130,7 @@ class TestResetFlag:
             return MagicMock(returncode=0)
 
         with patch(
-            "ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ) as mock_run:
             result = runner.invoke(
                 app,
@@ -165,7 +165,7 @@ class TestResetFlag:
             return MagicMock(returncode=0)
 
         with patch(
-            "ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ) as mock_run:
             result = runner.invoke(
                 app,
@@ -197,7 +197,7 @@ class TestContinueAndResetMutualExclusion:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
-        with patch("ralph_loop.cli.subprocess.run"):
+        with patch("ralph_loop.agents_claude.subprocess.run"):
             result = runner.invoke(
                 app,
                 [

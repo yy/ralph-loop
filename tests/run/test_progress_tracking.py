@@ -32,7 +32,9 @@ class TestVerboseFlag:
                 return MagicMock(returncode=0, stdout=" M file.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -69,7 +71,9 @@ class TestVerboseFlag:
                 return MagicMock(returncode=0, stdout=" M file.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -133,7 +137,9 @@ class TestShowProgressFlag:
                 )
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -171,7 +177,9 @@ class TestShowProgressFlag:
                 return MagicMock(returncode=0, stdout="")
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -207,7 +215,9 @@ class TestProgressOutput:
                 return MagicMock(returncode=0, stdout=" M modified_file.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -242,7 +252,9 @@ class TestProgressOutput:
                 return MagicMock(returncode=0, stdout="?? new_file.txt\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -275,7 +287,9 @@ class TestProgressOutput:
                 return MagicMock(returncode=0, stdout=" D deleted_file.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -308,7 +322,9 @@ class TestProgressOutput:
                 return MagicMock(returncode=0, stdout="")
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -349,7 +365,9 @@ class TestNonGitDirectory:
                 )
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -403,7 +421,9 @@ class TestProgressMultipleIterations:
                 return MagicMock(returncode=0, stdout=f" M file{git_call_count}.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [

@@ -54,7 +54,7 @@ class TestRunStopsOnTasksComplete:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n")
 
-        with patch("ralph_loop.cli.subprocess.run") as mock_run:
+        with patch("ralph_loop.agents_claude.subprocess.run") as mock_run:
             result = runner.invoke(
                 app,
                 [
@@ -90,7 +90,9 @@ class TestRunStopsOnTasksComplete:
                 tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout="", stderr="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -132,7 +134,9 @@ class TestRunStopsOnTasksComplete:
                 )
             return MagicMock(returncode=0, stdout="", stderr="")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [

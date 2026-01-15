@@ -139,7 +139,7 @@ class TestLoopConfigRunCommand:
         config_file = tmp_path / ".ralph-loop.toml"
         config_file.write_text("[loop]\nmax_iterations = 3\n")
 
-        with patch("ralph_loop.cli.subprocess.run") as mock_run:
+        with patch("ralph_loop.agents_claude.subprocess.run") as mock_run:
             mock_run.return_value.stdout = "output"
             mock_run.return_value.stderr = ""
             mock_run.return_value.returncode = 0

@@ -26,7 +26,9 @@ class TestLogFileOption:
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout="Test output from claude")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -57,7 +59,9 @@ class TestLogFileOption:
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout="Test output")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -90,7 +94,9 @@ class TestLogFileContent:
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout="Claude output here")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             runner.invoke(
                 app,
                 [
@@ -122,7 +128,9 @@ class TestLogFileContent:
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout="Claude output here")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             runner.invoke(
                 app,
                 [
@@ -157,7 +165,9 @@ class TestLogFileContent:
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout=expected_output)
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             runner.invoke(
                 app,
                 [
@@ -209,7 +219,9 @@ class TestLogFileMultipleIterations:
                 )
             return MagicMock(returncode=0, stdout=f"Output for iteration {call_count}")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             runner.invoke(
                 app,
                 [
@@ -250,7 +262,9 @@ class TestLogFileMultipleIterations:
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout="New output")
 
-        with patch("ralph_loop.cli.subprocess.run", side_effect=mock_subprocess_run):
+        with patch(
+            "ralph_loop.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+        ):
             runner.invoke(
                 app,
                 [

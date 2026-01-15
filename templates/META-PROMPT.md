@@ -47,7 +47,7 @@ internet_access: <true|false>
 
 ### Constraints
 Choose security constraints based on the project:
-- **conservative**: Safest option - Claude will ask permission for each action. Use for sensitive projects or when unsure.
+- **conservative**: Safest option - the agent will ask permission for each action. Use for sensitive projects or when unsure.
 - **path_restricted**: Allow writes to specific paths only (e.g., src/,tests/). Good balance of safety and convenience.
 - **yolo**: Skip all permission prompts. Only for trusted projects in isolated environments.
 

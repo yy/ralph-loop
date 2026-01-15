@@ -21,7 +21,7 @@ class TestDefaultStopCondition:
         # All tasks complete
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("ralph_loop.cli.subprocess.run") as mock_run:
+        with patch("ralph_loop.agents_claude.subprocess.run") as mock_run:
             result = runner.invoke(
                 app,
                 [
@@ -48,7 +48,7 @@ class TestDefaultStopCondition:
         # All tasks complete in custom file
         custom_tasks.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("ralph_loop.cli.subprocess.run") as mock_run:
+        with patch("ralph_loop.agents_claude.subprocess.run") as mock_run:
             result = runner.invoke(
                 app,
                 [
