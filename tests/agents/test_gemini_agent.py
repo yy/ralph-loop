@@ -40,7 +40,6 @@ class TestGeminiAgentImplementation:
     def test_gemini_agent_available_in_list(self):
         """GeminiAgent should appear in available agents list."""
         from wiggum.agents import get_available_agents
-        import wiggum.agents_gemini  # noqa: F401
 
         agents = get_available_agents()
         assert "gemini" in agents
