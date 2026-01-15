@@ -40,7 +40,6 @@ class TestCodexAgentImplementation:
     def test_codex_agent_available_in_list(self):
         """CodexAgent should appear in available agents list."""
         from wiggum.agents import get_available_agents
-        import wiggum.agents_codex  # noqa: F401
 
         agents = get_available_agents()
         assert "codex" in agents
