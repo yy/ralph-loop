@@ -38,9 +38,7 @@ Test goal
 - [ ] Add missing test coverage
 - [ ] Clean up unused imports
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
@@ -109,9 +107,7 @@ Test goal
 - [ ] Existing task
 - [ ] New refactoring task
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
@@ -143,9 +139,7 @@ Test goal
 - [ ] Simplify complex function
 - [ ] Add error handling
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
@@ -173,18 +167,30 @@ Test goal
             content = Path("TASKS.md").read_text()
             assert "- [ ] Existing" in content
 
-    def test_identify_tasks_handles_missing_meta_prompt(self, tmp_path: Path) -> None:
-        """--identify-tasks errors gracefully if META-PROMPT.md is missing."""
+    def test_identify_tasks_uses_bundled_template_when_no_local(
+        self, tmp_path: Path
+    ) -> None:
+        """--identify-tasks uses bundled META-PROMPT.md when no local templates exist."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
             Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n")
 
-            result = runner.invoke(app, ["run", "--identify-tasks"])
+            # No local templates/ directory - should fall back to bundled templates
+            mock_output = """```markdown
+## Goal
 
-            assert result.exit_code == 1
-            assert (
-                "meta" in result.output.lower() or "not found" in result.output.lower()
-            )
+Test goal
+
+## Tasks
+
+- [ ] Task using bundled template
+```"""
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
+                result = runner.invoke(app, ["run", "--identify-tasks"])
+
+            assert result.exit_code == 0
+            content = Path("TASKS.md").read_text()
+            assert "- [ ] Task using bundled template" in content
 
     def test_identify_tasks_creates_tasks_file_if_missing(self, tmp_path: Path) -> None:
         """--identify-tasks creates TASKS.md if it doesn't exist."""
@@ -205,9 +211,7 @@ Test goal
 
 - [ ] First identified task
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
@@ -268,9 +272,7 @@ Test goal
 - [ ] Task two
 - [ ] Task three
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
