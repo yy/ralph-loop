@@ -45,6 +45,12 @@ internet_access: <true|false>
 - Do NOT suggest tasks that are already completed or in progress
 - Build on existing work - suggest tasks that logically follow from what's done
 
+### When to Write Tests
+- **DO write tests** for new behavior, logic, APIs, or bug fixes
+- **DON'T write tests** for trivial changes: renames, constant changes, config tweaks, string updates, moving files
+- Tests should verify behavior, not implementation details
+- If a change is just updating a value/string, no test needed
+
 ### Constraints
 Choose security constraints based on the project:
 - **conservative**: Safest option - the agent will ask permission for each action. Use for sensitive projects or when unsure.

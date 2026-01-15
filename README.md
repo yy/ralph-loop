@@ -15,7 +15,7 @@ This is the "Ralph Wiggum loop" - the simplest possible agent loop. wiggum adds 
 - **Opinionated** - sensible defaults, few options
 - **Unobtrusive** - infer what you can, don't ask obvious questions
 - **Task-driven** - stops when TASKS.md has no unchecked items
-- **Test-driven** - write tests first, implement after
+- **Test-driven** - write tests first for new behavior; skip tests for trivial changes (renames, constants, config)
 
 ## Installation
 
