@@ -43,4 +43,4 @@ def get_templates_dir() -> Path:
     """Get the templates directory from the package."""
     import importlib.resources
 
-    return Path(importlib.resources.files("wiggum").joinpath("../../../templates"))
+    return Path(str(importlib.resources.files("wiggum"))) / "templates"
