@@ -210,4 +210,7 @@ __marimo__/
 /TASKS.md
 /LOOP-PROMPT.md
 /DONE.md
-/.ralph-loop.toml
+/.wiggum.toml
+
+# Claude Code local settings
+.claude/settings.local.json
