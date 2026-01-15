@@ -1,7 +1,7 @@
 [project]
 name = "ralph-loop"
 version = "0.1.0"
-description = "Ralph Wiggum loop for agents - run agent loops with guardrails"
+description = "Ralph Wiggum loop for agents"
 readme = "README.md"
 authors = [
     { name = "YY Ahn", email = "yongyeol@gmail.com" }

@@ -6,91 +6,27 @@ from typing import Optional
 
 import typer
 
+from ralph_loop.config import (
+    CONFIG_FILE,
+    get_templates_dir,
+    read_config,
+    write_config,
+)
+from ralph_loop.parsing import parse_markdown_from_output
+from ralph_loop.runner import (
+    get_file_changes,
+    run_claude_for_planning,
+    write_log_entry,
+)
+from ralph_loop.tasks import (
+    add_task_to_file,
+    get_current_task,
+    get_existing_task_descriptions,
+    get_existing_tasks_context,
+    tasks_remaining,
+)
+
 app = typer.Typer(help="Ralph Wiggum loop for agents")
-
-CONFIG_FILE = ".ralph-loop.toml"
-
-
-def read_config() -> dict:
-    """Read configuration from .ralph-loop.toml.
-
-    Returns:
-        Configuration dict with 'security' section containing 'yolo' and 'allow_paths'.
-        Returns empty dict if file doesn't exist.
-    """
-    config_path = Path(CONFIG_FILE)
-    if not config_path.exists():
-        return {}
-
-    try:
-        try:
-            import tomllib
-        except ImportError:
-            import tomli as tomllib
-
-        return tomllib.loads(config_path.read_text())
-    except Exception:
-        return {}
-
-
-def write_config(config: dict) -> None:
-    """Write configuration to .ralph-loop.toml.
-
-    Args:
-        config: Configuration dict to write.
-    """
-    config_path = Path(CONFIG_FILE)
-
-    # Build TOML content manually (simple format)
-    lines = []
-    if "security" in config:
-        lines.append("[security]")
-        security = config["security"]
-        if "yolo" in security:
-            lines.append(f"yolo = {'true' if security['yolo'] else 'false'}")
-        if "allow_paths" in security:
-            lines.append(f'allow_paths = "{security["allow_paths"]}"')
-
-    if "loop" in config:
-        if lines:
-            lines.append("")  # Blank line between sections
-        lines.append("[loop]")
-        loop = config["loop"]
-        if "max_iterations" in loop:
-            lines.append(f"max_iterations = {loop['max_iterations']}")
-        if "tasks_file" in loop:
-            lines.append(f'tasks_file = "{loop["tasks_file"]}"')
-        if "prompt_file" in loop:
-            lines.append(f'prompt_file = "{loop["prompt_file"]}"')
-
-    if "output" in config:
-        if lines:
-            lines.append("")  # Blank line between sections
-        lines.append("[output]")
-        output = config["output"]
-        if "log_file" in output:
-            lines.append(f'log_file = "{output["log_file"]}"')
-        if "verbose" in output:
-            lines.append(f"verbose = {'true' if output['verbose'] else 'false'}")
-
-    if "session" in config:
-        if lines:
-            lines.append("")  # Blank line between sections
-        lines.append("[session]")
-        session = config["session"]
-        if "continue_session" in session:
-            lines.append(
-                f"continue_session = {'true' if session['continue_session'] else 'false'}"
-            )
-
-    config_path.write_text("\n".join(lines) + "\n")
-
-
-def get_templates_dir() -> Path:
-    """Get the templates directory from the package."""
-    import importlib.resources
-
-    return Path(importlib.resources.files("ralph_loop").joinpath("../../../templates"))
 
 
 @app.command()
@@ -126,6 +62,16 @@ def run(
         "--reset",
         help="Start fresh each iteration (default behavior)",
     ),
+    keep_running: bool = typer.Option(
+        False,
+        "--keep-running",
+        help="Continue running even when all tasks are complete (agent can add new tasks)",
+    ),
+    stop_when_done: bool = typer.Option(
+        False,
+        "--stop-when-done",
+        help="Stop loop when all tasks are complete (default behavior)",
+    ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would run"),
     log_file: Optional[Path] = typer.Option(
         None, "--log-file", help="Log each iteration's output to this file"
@@ -136,6 +82,11 @@ def run(
         "--verbose",
         "--show-progress",
         help="Show file changes (via git status) after each iteration",
+    ),
+    identify_tasks: bool = typer.Option(
+        False,
+        "--identify-tasks",
+        help="Analyze codebase and populate TASKS.md with refactoring/cleanup tasks, then exit",
     ),
 ) -> None:
     """Run the agent loop. Stops when all tasks in TASKS.md are complete."""
@@ -182,6 +133,24 @@ def run(
         )
         raise typer.Exit(1)
 
+    if keep_running and stop_when_done:
+        typer.echo(
+            "Error: --keep-running and --stop-when-done are mutually exclusive. Cannot use both.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    # Apply loop config for keep_running if CLI flags not explicitly set
+    if not keep_running and not stop_when_done:
+        # Neither flag set - use config if available
+        if loop_config.get("keep_running", False):
+            keep_running = True
+
+    # Handle --identify-tasks: analyze codebase and populate TASKS.md
+    if identify_tasks:
+        _run_identify_tasks(tasks_file)
+        return
+
     # Determine prompt source - always from file
     if prompt_file is None:
         prompt_file = Path("LOOP-PROMPT.md")
@@ -201,6 +170,14 @@ def run(
         typer.echo(f"Would run {max_iterations} iterations")
         typer.echo(f"Command: {' '.join(cmd)}")
         typer.echo(f"Stop condition: tasks (check {tasks_file})")
+        if keep_running:
+            typer.echo(
+                "Task completion mode: keep running (continue for all iterations)"
+            )
+        else:
+            typer.echo(
+                "Task completion mode: stop when done (exit when tasks complete)"
+            )
         if continue_session:
             typer.echo(
                 "Session mode: continue (will pass -c to claude after first iteration)"
@@ -218,7 +195,7 @@ def run(
 
     def check_stop_conditions() -> Optional[str]:
         """Check stop conditions and return exit message if should stop."""
-        if not tasks_remaining(tasks_file):
+        if not keep_running and not tasks_remaining(tasks_file):
             return f"All tasks in {tasks_file} are complete. Exiting."
         return None
 
@@ -279,157 +256,6 @@ def run(
     typer.echo(f"{'=' * 60}")
 
 
-def tasks_remaining(tasks_file: Path = Path("TASKS.md")) -> bool:
-    """Check if there are incomplete tasks in TASKS.md."""
-    if not tasks_file.exists():
-        return True  # No tasks file means we don't know, keep running
-
-    content = tasks_file.read_text()
-    # Count unchecked boxes in Todo section
-    import re
-
-    # Find unchecked tasks: - [ ]
-    unchecked = re.findall(r"^- \[ \]", content, re.MULTILINE)
-    return len(unchecked) > 0
-
-
-def get_current_task(tasks_file: Path = Path("TASKS.md")) -> Optional[str]:
-    """Get the first incomplete task from TASKS.md.
-
-    Args:
-        tasks_file: Path to the tasks file.
-
-    Returns:
-        The task description (without the checkbox), or None if no tasks remain.
-    """
-    if not tasks_file.exists():
-        return None
-
-    content = tasks_file.read_text()
-    if not content:
-        return None
-
-    import re
-
-    # Find first unchecked task: - [ ] task description
-    match = re.search(r"^- \[ \] (.+)$", content, re.MULTILINE)
-    if match:
-        return match.group(1).strip()
-    return None
-
-
-def get_file_changes() -> tuple[bool, str]:
-    """Get file changes using git status.
-
-    Returns:
-        A tuple of (success, message) where success is True if git status ran,
-        and message is either the formatted file changes or an error message.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            return False, "Not a git repository - progress tracking unavailable"
-
-        if not result.stdout.strip():
-            return True, "No file changes"
-
-        # Parse git status output
-        modified = []
-        new_files = []
-        deleted = []
-        other = []
-
-        for line in result.stdout.strip().split("\n"):
-            if not line:
-                continue
-            status = line[:2]
-            filename = line[3:]
-
-            if "M" in status:
-                modified.append(filename)
-            elif status == "??":
-                new_files.append(filename)
-            elif "D" in status:
-                deleted.append(filename)
-            elif "A" in status:
-                new_files.append(filename)
-            else:
-                other.append(filename)
-
-        # Build output message
-        parts = []
-        if modified:
-            parts.append(f"Modified: {', '.join(modified)}")
-        if new_files:
-            parts.append(f"New: {', '.join(new_files)}")
-        if deleted:
-            parts.append(f"Deleted: {', '.join(deleted)}")
-        if other:
-            parts.append(f"Other: {', '.join(other)}")
-
-        return True, "\n".join(parts) if parts else "No file changes"
-    except FileNotFoundError:
-        return False, "Git not found - progress tracking unavailable"
-
-
-def write_log_entry(log_file: Path, iteration: int, output: str) -> None:
-    """Write a log entry to the specified log file.
-
-    Args:
-        log_file: Path to the log file.
-        iteration: The iteration number.
-        output: The output from claude to log.
-    """
-    from datetime import datetime
-
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    separator = "=" * 60
-    log_entry = (
-        f"\n{separator}\nIteration {iteration} - {timestamp}\n{separator}\n{output}\n"
-    )
-
-    with open(log_file, "a") as f:
-        f.write(log_entry)
-
-
-def run_claude_for_planning(meta_prompt: str) -> Optional[str]:
-    """Run Claude with meta prompt and return output."""
-    try:
-        result = subprocess.run(
-            ["claude", "--print", "-p", meta_prompt],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        return result.stdout
-    except FileNotFoundError:
-        return None
-
-
-def parse_toml_from_output(output: str) -> Optional[dict]:
-    """Extract and parse TOML block from Claude output."""
-    import re
-
-    try:
-        import tomllib
-    except ImportError:
-        import tomli as tomllib
-
-    # Find TOML block in output
-    match = re.search(r"```toml\s*(.*?)\s*```", output, re.DOTALL)
-    if match:
-        try:
-            return tomllib.loads(match.group(1))
-        except Exception:
-            return None
-    return None
-
-
 @app.command()
 def init(
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing files"),
@@ -463,6 +289,9 @@ def init(
     prompt_path = Path("LOOP-PROMPT.md")
     tasks_path = Path("TASKS.md")
 
+    # Track if we're updating existing TASKS.md (for merge behavior)
+    tasks_file_exists = tasks_path.exists()
+
     # Check for existing files
     if not force:
         if prompt_path.exists():
@@ -471,12 +300,7 @@ def init(
                 err=True,
             )
             raise typer.Exit(1)
-        if tasks_path.exists():
-            typer.echo(
-                f"Error: {tasks_path} already exists. Use --force to overwrite.",
-                err=True,
-            )
-            raise typer.Exit(1)
+        # Note: TASKS.md existence is OK - we'll merge tasks instead of failing
 
     # Get goal - infer from README if available
     typer.echo("Setting up ralph-loop...\n")
@@ -499,30 +323,51 @@ def init(
         )
     else:
         meta_prompt = meta_prompt.replace("{{goal}}", goal)
+
+    # Include existing tasks context if TASKS.md exists
+    existing_tasks_context = get_existing_tasks_context(tasks_path)
+    meta_prompt = meta_prompt.replace("{{existing_tasks}}", existing_tasks_context)
+
     output = run_claude_for_planning(meta_prompt)
 
     use_suggestions = False
     doc_files = "README.md, CLAUDE.md"
     tasks = []
+    suggested_constraints = {}
 
     if output:
-        config = parse_toml_from_output(output)
+        config = parse_markdown_from_output(output)
         if config:
             # Get goal from Claude if we inferred from README
             if not goal:
-                goal = config.get("project", {}).get("goal", "")
-            doc_files = config.get("project", {}).get("doc_files", doc_files)
+                goal = config.get("goal", "")
             suggested_tasks = config.get("tasks", [])
+            suggested_constraints = config.get("constraints", {})
 
             typer.echo("\nSuggested configuration:")
             typer.echo(f"  Goal: {goal}")
             typer.echo(f"  Doc files: {doc_files}")
             typer.echo("\nSuggested tasks:")
-            for t in suggested_tasks:
-                typer.echo(f"  - {t.get('description', '')}")
+            for task_desc in suggested_tasks:
+                typer.echo(f"  - {task_desc}")
+
+            # Show suggested constraints if present
+            if suggested_constraints:
+                typer.echo("\nSuggested security constraints:")
+                security_mode = suggested_constraints.get(
+                    "security_mode", "conservative"
+                )
+                typer.echo(f"  Security mode: {security_mode}")
+                if security_mode == "path_restricted":
+                    allow_paths = suggested_constraints.get("allow_paths", "")
+                    typer.echo(f"  Allowed paths: {allow_paths}")
+                if "internet_access" in suggested_constraints:
+                    typer.echo(
+                        f"  Internet access: {suggested_constraints['internet_access']}"
+                    )
 
             if typer.confirm("\nUse these suggestions?", default=True):
-                tasks = [f"- [ ] {t.get('description', '')}" for t in suggested_tasks]
+                tasks = [f"- [ ] {task_desc}" for task_desc in suggested_tasks]
                 use_suggestions = True
         else:
             typer.echo("Could not parse Claude's suggestions.")
@@ -546,45 +391,79 @@ def init(
                 break
             tasks.append(f"- [ ] {task}")
 
-    # Ask about security constraints
+    # Handle security constraints
     security_yolo = False
     security_allow_paths = ""
 
-    typer.echo("\nSecurity configuration:")
-    typer.echo("  1) Conservative - Claude will ask permission for each action")
-    typer.echo("  2) Path-restricted - Allow writes to specific paths only")
-    typer.echo("  3) YOLO mode - Skip all permission prompts (dangerous!)")
+    # Use suggested constraints if accepted
+    if use_suggestions and suggested_constraints:
+        security_mode = suggested_constraints.get("security_mode", "conservative")
 
-    security_choice = typer.prompt("Choose security mode [1/2/3]", default="1")
+        if security_mode == "yolo":
+            typer.echo(
+                "\nWARNING: YOLO mode skips ALL permission prompts. "
+                "Claude will be able to modify any file without asking."
+            )
+            typer.echo(
+                "This is dangerous and should only be used for trusted projects."
+            )
+            if typer.confirm(
+                "Are you sure you want to enable YOLO mode?", default=False
+            ):
+                security_yolo = True
+            else:
+                # User cancelled suggested yolo, fall back to manual
+                suggested_constraints = {}
+        elif security_mode == "path_restricted":
+            security_allow_paths = suggested_constraints.get("allow_paths", "")
+        # else: conservative mode - no special permissions needed
 
-    if security_choice == "2":
-        security_allow_paths = typer.prompt(
-            "Enter paths to allow (comma-separated, e.g., 'src/,tests/')"
-        )
-    elif security_choice == "3":
-        typer.echo(
-            "\nWARNING: YOLO mode skips ALL permission prompts. "
-            "Claude will be able to modify any file without asking."
-        )
-        typer.echo("This is dangerous and should only be used for trusted projects.")
-        if typer.confirm("Are you sure you want to enable YOLO mode?", default=False):
-            security_yolo = True
-        else:
-            # User cancelled, ask again
-            typer.echo("\nYOLO mode cancelled. Choosing a different mode:")
-            security_choice = typer.prompt("Choose security mode [1/2]", default="1")
-            if security_choice == "2":
-                security_allow_paths = typer.prompt(
-                    "Enter paths to allow (comma-separated, e.g., 'src/,tests/')"
+    # Manual security selection if no constraints or user cancelled
+    if not use_suggestions or not suggested_constraints:
+        typer.echo("\nSecurity configuration:")
+        typer.echo("  1) Conservative - Claude will ask permission for each action")
+        typer.echo("  2) Path-restricted - Allow writes to specific paths only")
+        typer.echo("  3) YOLO mode - Skip all permission prompts (dangerous!)")
+
+        security_choice = typer.prompt("Choose security mode [1/2/3]", default="1")
+
+        if security_choice == "2":
+            security_allow_paths = typer.prompt(
+                "Enter paths to allow (comma-separated, e.g., 'src/,tests/')"
+            )
+        elif security_choice == "3":
+            typer.echo(
+                "\nWARNING: YOLO mode skips ALL permission prompts. "
+                "Claude will be able to modify any file without asking."
+            )
+            typer.echo(
+                "This is dangerous and should only be used for trusted projects."
+            )
+            if typer.confirm(
+                "Are you sure you want to enable YOLO mode?", default=False
+            ):
+                security_yolo = True
+            else:
+                # User cancelled, ask again
+                typer.echo("\nYOLO mode cancelled. Choosing a different mode:")
+                security_choice = typer.prompt(
+                    "Choose security mode [1/2]", default="1"
                 )
+                if security_choice == "2":
+                    security_allow_paths = typer.prompt(
+                        "Enter paths to allow (comma-separated, e.g., 'src/,tests/')"
+                    )
 
-    # Write security config
+    # Write config with security and default loop settings
     write_config(
         {
             "security": {
                 "yolo": security_yolo,
                 "allow_paths": security_allow_paths,
-            }
+            },
+            "loop": {
+                "max_iterations": 10,
+            },
         }
     )
 
@@ -597,83 +476,108 @@ def init(
         .replace("{{tasks}}", tasks_str)
     )
 
-    tasks_template = (
-        tasks_template_path.read_text()
-        if tasks_template_path.exists()
-        else "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{{tasks}}\n"
-    )
-    tasks_content = tasks_template.replace(
-        "{{tasks}}", "\n".join(tasks) if tasks else "- [ ] (add your first task here)"
-    )
+    # Handle TASKS.md: merge if exists (unless --force), otherwise create new
+    if tasks_file_exists and not force:
+        # Merge: add only tasks that don't already exist
+        existing_tasks = get_existing_task_descriptions(tasks_path)
+        new_tasks_added = 0
+
+        # Extract task descriptions from the formatted tasks list
+        for task_line in tasks:
+            # task_line is like "- [ ] Description"
+            task_desc = task_line.replace("- [ ] ", "").strip()
+            if task_desc and task_desc.lower() not in existing_tasks:
+                add_task_to_file(tasks_path, task_desc)
+                new_tasks_added += 1
+
+        typer.echo(f"\nUpdated {tasks_path}: added {new_tasks_added} new task(s)")
+    else:
+        # Create new or overwrite with --force
+        tasks_template = (
+            tasks_template_path.read_text()
+            if tasks_template_path.exists()
+            else "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{{tasks}}\n"
+        )
+        tasks_content = tasks_template.replace(
+            "{{tasks}}",
+            "\n".join(tasks) if tasks else "- [ ] (add your first task here)",
+        )
+        tasks_path.write_text(tasks_content)
+        typer.echo(f"\nCreated {tasks_path}")
 
     prompt_path.write_text(prompt_content)
-    tasks_path.write_text(tasks_content)
-
-    typer.echo(f"\nCreated {prompt_path}, {tasks_path}, and {CONFIG_FILE}")
+    typer.echo(f"Created {prompt_path} and {CONFIG_FILE}")
     typer.echo("\nRun the loop with: ralph-loop run")
 
 
-def add_task_to_file(tasks_file: Path, task_description: str) -> None:
-    """Add a task to the tasks file.
+def _run_identify_tasks(tasks_file: Path) -> None:
+    """Analyze codebase and populate TASKS.md with identified tasks.
 
     Args:
-        tasks_file: Path to the tasks file.
-        task_description: The task description to add.
-
-    This function handles:
-    - Creating the file with proper structure if it doesn't exist
-    - Appending to the ## Todo section if it exists
-    - Adding a ## Todo section if missing
+        tasks_file: Path to the tasks file to populate.
     """
-    task_line = f"- [ ] {task_description}\n"
+    # Find meta-prompt template
+    if Path("templates").is_dir():
+        templates_dir = Path("templates")
+    else:
+        templates_dir = get_templates_dir()
 
-    if not tasks_file.exists():
-        # Create new file with standard structure
-        content = f"# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{task_line}"
-        tasks_file.write_text(content)
+    meta_prompt_path = templates_dir / "META-PROMPT.md"
+
+    if not meta_prompt_path.exists():
+        typer.echo(f"Error: Meta prompt not found: {meta_prompt_path}", err=True)
+        raise typer.Exit(1)
+
+    typer.echo("Analyzing codebase to identify tasks...")
+
+    # Build the meta-prompt with goal from README if available
+    meta_prompt = meta_prompt_path.read_text()
+
+    readme_path = Path("README.md")
+    if readme_path.exists():
+        readme_content = readme_path.read_text()
+        meta_prompt = meta_prompt.replace(
+            "{{goal}}",
+            f"(Infer from README below)\n\n## README.md\n\n{readme_content}",
+        )
+    else:
+        meta_prompt = meta_prompt.replace(
+            "{{goal}}", "Analyze codebase for refactoring and improvement opportunities"
+        )
+
+    # Include existing tasks context
+    existing_tasks_context = get_existing_tasks_context(tasks_file)
+    meta_prompt = meta_prompt.replace("{{existing_tasks}}", existing_tasks_context)
+
+    # Run Claude for planning
+    output = run_claude_for_planning(meta_prompt)
+
+    if not output:
+        typer.echo("Could not identify tasks (Claude returned no output).")
         return
 
-    content = tasks_file.read_text()
+    config = parse_markdown_from_output(output)
+    if not config or not config.get("tasks"):
+        typer.echo("Could not identify any new tasks.")
+        return
 
-    # Check if ## Todo section exists
-    if "## Todo" in content:
-        # Find the end of the Todo section content and append there
-        # The Todo section ends at EOF or at the next ## header
-        import re
+    suggested_tasks = config.get("tasks", [])
 
-        # Find ## Todo and append after its content
-        todo_match = re.search(r"(## Todo\n+)(.*?)(\n## |\Z)", content, re.DOTALL)
-        if todo_match:
-            # Insert new task at end of Todo section content
-            start = todo_match.start(2) + len(todo_match.group(2))
-            # Ensure there's a newline before the task if content exists
-            if todo_match.group(2).strip():
-                # There's existing content, append with newline
-                new_content = (
-                    content[:start].rstrip("\n")
-                    + "\n"
-                    + task_line
-                    + content[start:].lstrip("\n")
-                )
-            else:
-                # Empty Todo section, just add the task
-                new_content = (
-                    content[: todo_match.end(1)]
-                    + task_line
-                    + content[todo_match.start(3) :]
-                )
-            tasks_file.write_text(new_content)
-        else:
-            # Fallback: append to end
-            if not content.endswith("\n"):
-                content += "\n"
-            tasks_file.write_text(content + task_line)
-    else:
-        # No ## Todo section, add one
-        if not content.endswith("\n"):
-            content += "\n"
-        content += f"\n## Todo\n\n{task_line}"
-        tasks_file.write_text(content)
+    # Display identified tasks
+    typer.echo("\nIdentified tasks:")
+    for task_desc in suggested_tasks:
+        typer.echo(f"  - {task_desc}")
+
+    # Merge tasks with existing ones (no duplicates)
+    existing_task_descs = get_existing_task_descriptions(tasks_file)
+    new_tasks_added = 0
+
+    for task_desc in suggested_tasks:
+        if task_desc.lower() not in existing_task_descs:
+            add_task_to_file(tasks_file, task_desc)
+            new_tasks_added += 1
+
+    typer.echo(f"\nAdded {new_tasks_added} new task(s) to {tasks_file}")
 
 
 @app.command()

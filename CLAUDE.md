@@ -30,13 +30,18 @@ uv run pytest tests/test_file.py::test_name -v
 ## Architecture
 
 ### CLI Commands
-- `ralph-loop init`: Interactive setup that creates `LOOP-PROMPT.md`, `TASKS.md`, and `.ralph-loop.toml`
-- `ralph-loop run`: Executes the loop, reading prompt from file and iterating until all tasks in TASKS.md are complete (or max iterations reached)
+- `ralph-loop init`: Interactive setup that creates `LOOP-PROMPT.md`, `TASKS.md`, and `.ralph-loop.toml`. Claude analyzes the codebase and suggests both tasks and security constraints. If `TASKS.md` already exists, new tasks are merged (without duplicates) rather than overwriting.
+- `ralph-loop run`: Executes the loop, reading prompt from file and iterating until all tasks in TASKS.md are complete (or max iterations reached). Use `--keep-running` to continue even when tasks are complete (agent can add new tasks). Use `--identify-tasks` to analyze the codebase and populate TASKS.md with refactoring/cleanup tasks without running the loop.
 - `ralph-loop add`: Adds tasks to `TASKS.md`
 
 ### Configuration
-Security settings are stored in `.ralph-loop.toml` and read by the `run` command:
+Settings are stored in `.ralph-loop.toml` and read by the `run` command:
+
+**[security] section:**
 - `yolo`: Skip all permission prompts
 - `allow_paths`: Comma-separated paths to allow writing
 
-CLI flags (`--yolo`, `--allow-paths`) override config file settings.
+**[loop] section:**
+- `max_iterations`: Default number of loop iterations (default: 10)
+
+CLI flags override config file settings.

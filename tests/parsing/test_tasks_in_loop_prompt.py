@@ -20,7 +20,9 @@ class TestTasksEmbeddingInLoopPrompt:
 
     def test_loop_prompt_template_has_tasks_placeholder(self) -> None:
         """The LOOP-PROMPT.md template should have a {{tasks}} placeholder."""
-        template_path = Path(__file__).parent.parent / "templates" / "LOOP-PROMPT.md"
+        template_path = (
+            Path(__file__).parent.parent.parent / "templates" / "LOOP-PROMPT.md"
+        )
         assert template_path.exists(), "LOOP-PROMPT.md template not found"
         content = template_path.read_text()
         assert "{{tasks}}" in content, (
@@ -75,18 +77,15 @@ class TestTasksEmbeddingInLoopPrompt:
             Path("README.md").write_text("# Test Project\n\nA REST API project.")
 
             # Mock Claude to return suggested tasks
-            mock_output = """```toml
-[project]
-goal = "Build a REST API"
-doc_files = "README.md"
+            mock_output = """```markdown
+## Goal
 
-[[tasks]]
-description = "Set up project structure"
-priority = 1
+Build a REST API
 
-[[tasks]]
-description = "Implement user endpoints"
-priority = 2
+## Tasks
+
+- [ ] Set up project structure
+- [ ] Implement user endpoints
 ```"""
             with patch(
                 "ralph_loop.cli.run_claude_for_planning", return_value=mock_output

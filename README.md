@@ -42,6 +42,8 @@ ralph-loop run                    # Run (skips permission prompts by default)
 ralph-loop run --no-yolo          # Ask for permissions
 ralph-loop run -n 5               # Max 5 iterations
 ralph-loop run --continue         # Keep context between iterations
+ralph-loop run --keep-running     # Continue even when tasks complete (agent can add new tasks)
+ralph-loop run --identify-tasks   # Analyze codebase and add refactoring tasks to TASKS.md
 ```
 
 ## License

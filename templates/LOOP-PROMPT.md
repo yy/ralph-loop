@@ -17,7 +17,8 @@
 7. Run tests - they must pass (green)
 8. Only after tests pass: Update TASKS.md to mark the task complete
 9. Update documentation ({{doc_files}}) to reflect changes
-10. If you discover new tasks while working, add them to TASKS.md
+10. Review recent changes for refactoring opportunities: look for code that could be simplified, cleanup needed, or better organization
+11. If you discover new tasks while working, add them to TASKS.md
 
 ## Rules
 
