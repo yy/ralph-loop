@@ -115,24 +115,24 @@ class TestTemplateFormat:
 
     def test_template_has_done_section_first(self) -> None:
         """The TASKS.md template should have Done section before Todo."""
-        from pathlib import Path
+        from wiggum.config import get_templates_dir
 
-        template_path = Path(__file__).parent.parent / "templates" / "TASKS.md"
-        if template_path.exists():
-            content = template_path.read_text()
-            done_pos = content.find("## Done")
-            todo_pos = content.find("## Todo")
-            # Done should appear before Todo in the file
-            assert done_pos < todo_pos, (
-                f"Done section should appear before Todo section. "
-                f"Done at {done_pos}, Todo at {todo_pos}"
-            )
+        template_path = get_templates_dir() / "TASKS.md"
+        assert template_path.exists(), "TASKS.md template not found"
+        content = template_path.read_text()
+        done_pos = content.find("## Done")
+        todo_pos = content.find("## Todo")
+        # Done should appear before Todo in the file
+        assert done_pos < todo_pos, (
+            f"Done section should appear before Todo section. "
+            f"Done at {done_pos}, Todo at {todo_pos}"
+        )
 
     def test_template_has_in_progress_section(self) -> None:
         """The TASKS.md template should have an In Progress section."""
-        from pathlib import Path
+        from wiggum.config import get_templates_dir
 
-        template_path = Path(__file__).parent.parent / "templates" / "TASKS.md"
-        if template_path.exists():
-            content = template_path.read_text()
-            assert "## In Progress" in content
+        template_path = get_templates_dir() / "TASKS.md"
+        assert template_path.exists(), "TASKS.md template not found"
+        content = template_path.read_text()
+        assert "## In Progress" in content

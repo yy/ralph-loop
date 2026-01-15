@@ -4,7 +4,7 @@ After completing a task, the agent should examine the codebase and
 add refactoring tasks (simplification, cleanup, better organization).
 """
 
-from pathlib import Path
+from wiggum.config import get_templates_dir
 
 
 class TestRefactoringGuidanceInTemplate:
@@ -12,9 +12,7 @@ class TestRefactoringGuidanceInTemplate:
 
     def test_loop_prompt_template_has_refactoring_step(self) -> None:
         """The LOOP-PROMPT.md template should include a step to add refactoring tasks."""
-        template_path = (
-            Path(__file__).parent.parent.parent / "templates" / "LOOP-PROMPT.md"
-        )
+        template_path = get_templates_dir() / "LOOP-PROMPT.md"
         assert template_path.exists(), "LOOP-PROMPT.md template not found"
         content = template_path.read_text()
 
@@ -25,9 +23,7 @@ class TestRefactoringGuidanceInTemplate:
 
     def test_loop_prompt_template_mentions_simplification(self) -> None:
         """The template should mention simplification as a refactoring goal."""
-        template_path = (
-            Path(__file__).parent.parent.parent / "templates" / "LOOP-PROMPT.md"
-        )
+        template_path = get_templates_dir() / "LOOP-PROMPT.md"
         content = template_path.read_text()
 
         assert "simplif" in content.lower(), (
@@ -37,9 +33,7 @@ class TestRefactoringGuidanceInTemplate:
 
     def test_loop_prompt_template_mentions_cleanup(self) -> None:
         """The template should mention cleanup as a refactoring goal."""
-        template_path = (
-            Path(__file__).parent.parent.parent / "templates" / "LOOP-PROMPT.md"
-        )
+        template_path = get_templates_dir() / "LOOP-PROMPT.md"
         content = template_path.read_text()
 
         assert "cleanup" in content.lower() or "clean up" in content.lower(), (
@@ -48,9 +42,7 @@ class TestRefactoringGuidanceInTemplate:
 
     def test_loop_prompt_template_has_refactoring_in_workflow(self) -> None:
         """The refactoring step should be part of the workflow section."""
-        template_path = (
-            Path(__file__).parent.parent.parent / "templates" / "LOOP-PROMPT.md"
-        )
+        template_path = get_templates_dir() / "LOOP-PROMPT.md"
         content = template_path.read_text()
 
         # Find the workflow section and check it contains refactoring

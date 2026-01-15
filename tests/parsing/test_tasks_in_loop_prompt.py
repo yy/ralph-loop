@@ -1,6 +1,6 @@
 """Tests for embedding tasks in LOOP-PROMPT.md during init.
 
-This tests that when ralph-loop init runs, the generated LOOP-PROMPT.md
+This tests that when wiggum init runs, the generated LOOP-PROMPT.md
 includes the tasks inline (from TASKS.md) so the agent has all context
 in a single prompt file.
 """
@@ -11,6 +11,7 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from wiggum.cli import app
+from wiggum.config import get_templates_dir
 
 runner = CliRunner()
 
@@ -20,9 +21,7 @@ class TestTasksEmbeddingInLoopPrompt:
 
     def test_loop_prompt_template_has_tasks_placeholder(self) -> None:
         """The LOOP-PROMPT.md template should have a {{tasks}} placeholder."""
-        template_path = (
-            Path(__file__).parent.parent.parent / "templates" / "LOOP-PROMPT.md"
-        )
+        template_path = get_templates_dir() / "LOOP-PROMPT.md"
         assert template_path.exists(), "LOOP-PROMPT.md template not found"
         content = template_path.read_text()
         assert "{{tasks}}" in content, (
@@ -87,9 +86,7 @@ Build a REST API
 - [ ] Set up project structure
 - [ ] Implement user endpoints
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 # Accept Claude's suggestions with 'y', then conservative mode
                 result = runner.invoke(
                     app,
