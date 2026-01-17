@@ -1,4 +1,4 @@
-"""Markdown parsing for ralph-loop."""
+"""Markdown parsing for wiggum."""
 
 import re
 from typing import Optional
@@ -9,10 +9,6 @@ def parse_markdown_from_output(output: str) -> Optional[dict]:
 
     Expects markdown in the format:
     ```markdown
-    ## Goal
-
-    One line goal description
-
     ## Tasks
 
     - [ ] Task 1
@@ -26,7 +22,7 @@ def parse_markdown_from_output(output: str) -> Optional[dict]:
     ```
 
     Returns:
-        Dict with 'goal' (str), 'tasks' (list of str), and 'constraints' (dict),
+        Dict with 'tasks' (list of str) and 'constraints' (dict),
         or None if parsing fails.
     """
 
@@ -38,19 +34,6 @@ def parse_markdown_from_output(output: str) -> Optional[dict]:
     content = match.group(1).strip()
     if not content:
         return None
-
-    # Extract goal from ## Goal section
-    goal_match = re.search(r"##\s*Goal\s*\n+(.+?)(?=\n##|\Z)", content, re.DOTALL)
-    if not goal_match:
-        return None
-
-    # Get first non-empty line as the goal
-    goal_lines = [
-        line.strip() for line in goal_match.group(1).strip().split("\n") if line.strip()
-    ]
-    if not goal_lines:
-        return None
-    goal = goal_lines[0]
 
     # Extract tasks from ## Tasks section
     tasks_match = re.search(r"##\s*Tasks\s*\n+(.+?)(?=\n##|\Z)", content, re.DOTALL)
@@ -94,4 +77,4 @@ def parse_markdown_from_output(output: str) -> Optional[dict]:
                         "1",
                     )
 
-    return {"goal": goal, "tasks": tasks, "constraints": constraints}
+    return {"tasks": tasks, "constraints": constraints}

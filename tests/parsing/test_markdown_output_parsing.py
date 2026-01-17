@@ -1,8 +1,4 @@
-"""Tests for parsing markdown output from Claude during init.
-
-This tests that the init command correctly parses markdown output
-from Claude instead of TOML format.
-"""
+"""Tests for parsing markdown output from Claude during init."""
 
 from wiggum.cli import parse_markdown_from_output
 
@@ -10,32 +6,9 @@ from wiggum.cli import parse_markdown_from_output
 class TestParseMarkdownFromOutput:
     """Tests for parse_markdown_from_output function."""
 
-    def test_parses_goal_from_markdown_block(self) -> None:
-        """Should extract goal from ## Goal section."""
-        output = """Here's my analysis:
-
-```markdown
-## Goal
-
-Build a REST API for user management
-
-## Tasks
-
-- [ ] Set up project structure
-- [ ] Implement user endpoints
-```
-"""
-        result = parse_markdown_from_output(output)
-        assert result is not None
-        assert result["goal"] == "Build a REST API for user management"
-
     def test_parses_tasks_from_markdown_block(self) -> None:
         """Should extract tasks from ## Tasks section."""
         output = """```markdown
-## Goal
-
-Build a CLI tool
-
 ## Tasks
 
 - [ ] Set up project structure
@@ -62,28 +35,9 @@ Build a CLI tool
         result = parse_markdown_from_output(output)
         assert result is None
 
-    def test_handles_multiline_goal(self) -> None:
-        """Should handle single-line goal (ignore additional lines)."""
-        output = """```markdown
-## Goal
-
-Build a comprehensive REST API
-
-## Tasks
-
-- [ ] First task
-```"""
-        result = parse_markdown_from_output(output)
-        assert result is not None
-        assert result["goal"] == "Build a comprehensive REST API"
-
     def test_handles_tasks_with_extra_whitespace(self) -> None:
         """Should handle tasks with extra whitespace."""
         output = """```markdown
-## Goal
-
-Test project
-
 ## Tasks
 
 - [ ]   Set up project structure
@@ -92,27 +46,16 @@ Test project
 ```"""
         result = parse_markdown_from_output(output)
         assert result is not None
-        # Should strip whitespace from tasks
         assert "Set up project structure" in result["tasks"]
         assert "Implement login" in result["tasks"]
         assert "Add tests" in result["tasks"]
 
-    def test_returns_none_when_goal_missing(self) -> None:
-        """Should return None when Goal section is missing."""
-        output = """```markdown
-## Tasks
-
-- [ ] Task 1
-```"""
-        result = parse_markdown_from_output(output)
-        assert result is None
-
     def test_returns_none_when_tasks_missing(self) -> None:
         """Should return None when Tasks section is missing."""
         output = """```markdown
-## Goal
+## Constraints
 
-Build something
+security_mode: conservative
 ```"""
         result = parse_markdown_from_output(output)
         assert result is None
@@ -122,10 +65,6 @@ Build something
         output = """I've analyzed the codebase and here's what I suggest:
 
 ```markdown
-## Goal
-
-Build a testing framework
-
 ## Tasks
 
 - [ ] Create test runner
@@ -135,16 +74,11 @@ Build a testing framework
 These tasks should get you started!"""
         result = parse_markdown_from_output(output)
         assert result is not None
-        assert result["goal"] == "Build a testing framework"
         assert len(result["tasks"]) == 2
 
     def test_ignores_checked_tasks(self) -> None:
         """Should only include unchecked tasks."""
         output = """```markdown
-## Goal
-
-Continue project
-
 ## Tasks
 
 - [ ] New task
@@ -158,17 +92,32 @@ Continue project
         assert "Another new task" in result["tasks"]
         assert "Already done" not in result["tasks"]
 
-    def test_handles_lowercase_markdown_fence(self) -> None:
-        """Should handle lowercase markdown in fence."""
+    def test_parses_constraints(self) -> None:
+        """Should extract constraints from ## Constraints section."""
         output = """```markdown
-## Goal
+## Tasks
 
-Test goal
+- [ ] Task 1
 
+## Constraints
+
+security_mode: path_restricted
+allow_paths: src/,tests/
+internet_access: true
+```"""
+        result = parse_markdown_from_output(output)
+        assert result is not None
+        assert result["constraints"]["security_mode"] == "path_restricted"
+        assert result["constraints"]["allow_paths"] == "src/,tests/"
+        assert result["constraints"]["internet_access"] is True
+
+    def test_handles_missing_constraints(self) -> None:
+        """Should return empty constraints dict when section is missing."""
+        output = """```markdown
 ## Tasks
 
 - [ ] Task 1
 ```"""
         result = parse_markdown_from_output(output)
         assert result is not None
-        assert result["goal"] == "Test goal"
+        assert result["constraints"] == {}

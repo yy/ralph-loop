@@ -1,12 +1,12 @@
-You are helping set up a ralph-loop (an agent loop that iterates on tasks until done).
+You are helping set up wiggum (an agent loop that iterates on tasks until done).
 
-## User's Goal
+## Context
 
 {{goal}}
 
 ## Your Task
 
-Analyze this codebase and break down the user's goal into concrete, actionable tasks.
+Analyze this codebase and suggest concrete, actionable tasks.
 Also suggest appropriate security constraints based on the project's needs.
 
 ## Output Format
@@ -14,10 +14,6 @@ Also suggest appropriate security constraints based on the project's needs.
 Output ONLY a markdown block. No other text.
 
 ```markdown
-## Goal
-
-One line summary of the goal
-
 ## Tasks
 
 - [ ] First task description
@@ -36,27 +32,24 @@ internet_access: <true|false>
 ## Guidelines
 
 ### Tasks
-- Break the goal into 3-7 concrete tasks
+- Break work into 3-7 concrete tasks
 - Each task should be completable in one agent session
 - Order by priority (most important first)
-- Tasks should be testable (have clear done criteria)
-- Consider what already exists in the codebase
+- Tasks should have clear done criteria
 - Don't include vague tasks like "improve code quality"
-- Do NOT suggest tasks that are already completed or in progress
+- Do NOT suggest tasks that are already completed
 - Build on existing work - suggest tasks that logically follow from what's done
 
-### When to Write Tests
-- **DO write tests** for new behavior, logic, APIs, or bug fixes
-- **DON'T write tests** for trivial changes: renames, constant changes, config tweaks, string updates, moving files
-- Tests should verify behavior, not implementation details
-- If a change is just updating a value/string, no test needed
+### Testing guidance for tasks
+- Tasks involving new behavior, logic, APIs, or bug fixes need tests (test-first)
+- Tasks involving string changes, renames, config tweaks do NOT need tests
+- Never write tests that just check string presence or file existence
 
 ### Constraints
-Choose security constraints based on the project:
-- **conservative**: Safest option - the agent will ask permission for each action. Use for sensitive projects or when unsure.
-- **path_restricted**: Allow writes to specific paths only (e.g., src/,tests/). Good balance of safety and convenience.
-- **yolo**: Skip all permission prompts. Only for trusted projects in isolated environments.
+- **conservative**: Agent asks permission for each action. Use when unsure.
+- **path_restricted**: Allow writes to specific paths only (e.g., src/,tests/).
+- **yolo**: Skip all permission prompts. Only for trusted projects.
 
 For `internet_access`:
-- Set to `true` if tasks require web fetching, API calls, or package installation
-- Set to `false` for offline-only projects
+- `true` if tasks require web fetching, API calls, or package installation
+- `false` for offline-only projects

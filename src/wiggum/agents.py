@@ -1,4 +1,4 @@
-"""Agent abstraction layer for ralph-loop.
+"""Agent abstraction layer for wiggum.
 
 This module defines the interface for running different coding agents
 (Claude, Codex, Gemini, etc.) with a common input/output contract.

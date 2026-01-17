@@ -1,4 +1,4 @@
-"""Runner utilities for ralph-loop."""
+"""Runner utilities for wiggum."""
 
 import subprocess
 from pathlib import Path

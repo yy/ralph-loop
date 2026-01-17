@@ -1,4 +1,4 @@
-"""Configuration handling for ralph-loop."""
+"""Configuration handling for wiggum."""
 
 from pathlib import Path
 

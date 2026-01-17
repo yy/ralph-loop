@@ -85,18 +85,12 @@ allow_paths: api/,models/,tests/
     def test_handles_missing_constraints_section(self) -> None:
         """Should return empty constraints when section is missing."""
         output = """```markdown
-## Goal
-
-Build something
-
 ## Tasks
 
 - [ ] First task
 ```"""
         result = parse_markdown_from_output(output)
         assert result is not None
-        # Should still parse goal and tasks even without constraints
-        assert result["goal"] == "Build something"
         assert "constraints" in result
         assert result["constraints"] == {}
 
@@ -157,55 +151,6 @@ internet_access: no
         result = parse_markdown_from_output(output)
         assert result is not None
         assert result["constraints"]["internet_access"] is False
-
-
-class TestMetapromptIncludesConstraintGuidance:
-    """Tests that META-PROMPT.md asks Claude about constraints."""
-
-    def test_metaprompt_mentions_security_constraints(self) -> None:
-        """META-PROMPT.md should mention security constraints."""
-        metaprompt_path = Path("templates/META-PROMPT.md")
-        if not metaprompt_path.exists():
-            # Try package location
-            from wiggum.cli import get_templates_dir
-
-            metaprompt_path = get_templates_dir() / "META-PROMPT.md"
-
-        content = metaprompt_path.read_text()
-        assert "constraints" in content.lower() or "Constraints" in content
-
-    def test_metaprompt_mentions_yolo_option(self) -> None:
-        """META-PROMPT.md should mention yolo as an option."""
-        metaprompt_path = Path("templates/META-PROMPT.md")
-        if not metaprompt_path.exists():
-            from wiggum.cli import get_templates_dir
-
-            metaprompt_path = get_templates_dir() / "META-PROMPT.md"
-
-        content = metaprompt_path.read_text()
-        assert "yolo" in content.lower()
-
-    def test_metaprompt_mentions_path_restrictions(self) -> None:
-        """META-PROMPT.md should mention path restriction option."""
-        metaprompt_path = Path("templates/META-PROMPT.md")
-        if not metaprompt_path.exists():
-            from wiggum.cli import get_templates_dir
-
-            metaprompt_path = get_templates_dir() / "META-PROMPT.md"
-
-        content = metaprompt_path.read_text()
-        assert "path" in content.lower()
-
-    def test_metaprompt_mentions_internet_access(self) -> None:
-        """META-PROMPT.md should mention internet access option."""
-        metaprompt_path = Path("templates/META-PROMPT.md")
-        if not metaprompt_path.exists():
-            from wiggum.cli import get_templates_dir
-
-            metaprompt_path = get_templates_dir() / "META-PROMPT.md"
-
-        content = metaprompt_path.read_text()
-        assert "internet" in content.lower()
 
 
 class TestInitUsesConstraintSuggestions:

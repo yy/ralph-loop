@@ -1,4 +1,4 @@
-"""Task management for ralph-loop."""
+"""Task management for wiggum."""
 
 import re
 from pathlib import Path
