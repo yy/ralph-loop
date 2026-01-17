@@ -21,7 +21,7 @@ class TestDefaultStopCondition:
         # All tasks complete
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("wiggum.agents_claude.subprocess.run") as mock_run:
+        with patch("wiggum.cli.get_agent") as mock_get_agent:
             result = runner.invoke(
                 app,
                 [
@@ -32,11 +32,13 @@ class TestDefaultStopCondition:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         # Should exit immediately since all tasks are done (default behavior)
-        mock_run.assert_not_called()
+        mock_get_agent.return_value.run.assert_not_called()
         assert "complete" in result.output.lower()
         assert result.exit_code == 0
 
@@ -48,7 +50,7 @@ class TestDefaultStopCondition:
         # All tasks complete in custom file
         custom_tasks.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("wiggum.agents_claude.subprocess.run") as mock_run:
+        with patch("wiggum.cli.get_agent") as mock_get_agent:
             result = runner.invoke(
                 app,
                 [
@@ -59,10 +61,12 @@ class TestDefaultStopCondition:
                     str(custom_tasks),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         # Should exit immediately since all tasks are done
-        mock_run.assert_not_called()
+        mock_get_agent.return_value.run.assert_not_called()
         assert "complete" in result.output.lower()
         assert result.exit_code == 0

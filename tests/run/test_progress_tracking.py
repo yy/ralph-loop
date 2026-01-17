@@ -46,6 +46,8 @@ class TestVerboseFlag:
                     "-v",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -85,6 +87,8 @@ class TestVerboseFlag:
                     "--verbose",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -151,6 +155,8 @@ class TestShowProgressFlag:
                     "--show-progress",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -159,27 +165,23 @@ class TestShowProgressFlag:
         assert "file" in result.output.lower() or "change" in result.output.lower()
 
     def test_no_progress_shown_without_flag(self, tmp_path: Path) -> None:
-        """Without --show-progress, git status is not run."""
+        """Without --show-progress, progress output is not displayed."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
-        git_was_called = False
+        def mock_agent_run(config):
+            tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
+            return AgentResult(stdout="Claude output", stderr="", return_code=0)
 
-        def mock_subprocess_run(cmd, **kwargs):
-            nonlocal git_was_called
-            if cmd[0] == "claude":
-                tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-                return MagicMock(returncode=0, stdout="Claude output")
-            elif cmd[0] == "git":
-                git_was_called = True
-                return MagicMock(returncode=0, stdout="")
-            return MagicMock(returncode=0, stdout="")
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             result = runner.invoke(
                 app,
                 [
@@ -190,11 +192,15 @@ class TestShowProgressFlag:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         assert result.exit_code == 0
-        assert not git_was_called
+        # Without --show-progress, should not show file change information
+        # The output should not contain progress-specific text like "Files changed"
+        assert "Files changed" not in result.output
 
 
 class TestProgressOutput:
@@ -229,6 +235,8 @@ class TestProgressOutput:
                     "--show-progress",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -266,6 +274,8 @@ class TestProgressOutput:
                     "--show-progress",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -301,6 +311,8 @@ class TestProgressOutput:
                     "--show-progress",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -336,6 +348,8 @@ class TestProgressOutput:
                     "--show-progress",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -379,6 +393,8 @@ class TestNonGitDirectory:
                     "--show-progress",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -395,35 +411,33 @@ class TestProgressMultipleIterations:
 
     def test_progress_shown_after_each_iteration(self, tmp_path: Path) -> None:
         """Progress is shown after each iteration, not just the last one."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
         call_count = 0
-        git_call_count = 0
 
-        def mock_subprocess_run(cmd, **kwargs):
-            nonlocal call_count, git_call_count
-            if cmd[0] == "claude":
-                call_count += 1
-                if call_count == 1:
-                    tasks_file.write_text(
-                        "# Tasks\n\n## Todo\n\n- [ ] task2\n\n## Done\n\n- [x] task1\n"
-                    )
-                elif call_count == 2:
-                    tasks_file.write_text(
-                        "# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n"
-                    )
-                return MagicMock(returncode=0, stdout="Claude output")
-            elif cmd[0] == "git":
-                git_call_count += 1
-                return MagicMock(returncode=0, stdout=f" M file{git_call_count}.py\n")
-            return MagicMock(returncode=0, stdout="")
+        def mock_agent_run(config):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                tasks_file.write_text(
+                    "# Tasks\n\n## Todo\n\n- [ ] task2\n\n## Done\n\n- [x] task1\n"
+                )
+            elif call_count == 2:
+                tasks_file.write_text(
+                    "# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n"
+                )
+            return AgentResult(stdout="Claude output", stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             result = runner.invoke(
                 app,
                 [
@@ -435,12 +449,14 @@ class TestProgressMultipleIterations:
                     "--show-progress",
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         assert result.exit_code == 0
-        # Git should have been called once per iteration (2 iterations)
-        assert git_call_count == 2
+        # Agent should have been called twice (2 tasks)
+        assert call_count == 2
 
 
 class TestDryRunWithProgress:

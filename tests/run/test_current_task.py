@@ -83,22 +83,24 @@ class TestRunDisplaysCurrentTask:
 
     def test_run_displays_current_task_at_iteration_start(self, tmp_path: Path) -> None:
         """The run command displays the current task at iteration start."""
+        from wiggum.agents import AgentResult
+
         # Setup
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] Implement feature X\n")
 
-        call_count = 0
-
-        def mock_subprocess_run(*args, **kwargs):
-            nonlocal call_count
-            call_count += 1
+        def mock_agent_run(config):
             # Mark task complete after first iteration
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] Implement feature X\n")
-            return MagicMock(returncode=0)
+            return AgentResult(stdout="", stderr="", return_code=0)
 
-        with patch("wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             result = runner.invoke(
                 app,
                 [
@@ -109,6 +111,8 @@ class TestRunDisplaysCurrentTask:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -123,7 +127,7 @@ class TestRunDisplaysCurrentTask:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] All done\n")
 
-        with patch("wiggum.agents_claude.subprocess.run") as mock_run:
+        with patch("wiggum.cli.get_agent") as mock_get_agent:
             result = runner.invoke(
                 app,
                 [
@@ -134,10 +138,12 @@ class TestRunDisplaysCurrentTask:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         # Should exit without running since all tasks are complete
-        mock_run.assert_not_called()
+        mock_get_agent.return_value.run.assert_not_called()
         assert "All tasks" in result.output or "complete" in result.output.lower()
         assert result.exit_code == 0

@@ -99,15 +99,20 @@ def run(
         "--identify-tasks",
         help="Analyze codebase and populate TASKS.md with refactoring/cleanup tasks, then exit",
     ),
-    git_workflow: bool = typer.Option(
+    create_pr: bool = typer.Option(
         False,
-        "--git",
-        help="Enable git workflow: fetch/merge main, create branch, create PR at end",
+        "--pr",
+        help="Create a PR after the loop completes",
     ),
-    no_git_workflow: bool = typer.Option(
+    no_branch: bool = typer.Option(
         False,
-        "--no-git",
-        help="Disable git workflow (default behavior)",
+        "--no-branch",
+        help="Skip automatic branch creation (run on current branch)",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Skip all git safety checks",
     ),
     branch_prefix: Optional[str] = typer.Option(
         None,
@@ -131,8 +136,9 @@ def run(
             reset_session=reset_session,
             keep_running=keep_running,
             stop_when_done=stop_when_done,
-            git_workflow=git_workflow,
-            no_git_workflow=no_git_workflow,
+            create_pr=create_pr,
+            no_branch=no_branch,
+            force=force,
             branch_prefix=branch_prefix,
         )
     except ValueError as e:
@@ -199,11 +205,15 @@ def run(
             typer.echo(
                 "Progress tracking: enabled (will show file changes via git status)"
             )
-        if cfg.git_workflow:
-            typer.echo(
-                "Git workflow: enabled (will fetch/merge main, create branch, create PR)"
-            )
-            typer.echo(f"Branch prefix: {cfg.branch_prefix}")
+        if cfg.no_branch:
+            typer.echo("Git safety: disabled (--no-branch)")
+        elif cfg.force:
+            typer.echo("Git safety: disabled (--force)")
+        else:
+            typer.echo("Git safety: enabled (will create branch in git repos)")
+        if cfg.create_pr:
+            typer.echo("PR creation: enabled (will create PR after loop)")
+        typer.echo(f"Branch prefix: {cfg.branch_prefix}")
         typer.echo(f"Prompt:\n---\n{prompt}\n---")
         return
 
@@ -214,44 +224,80 @@ def run(
         typer.echo(get_cli_error_message(agent_name), err=True)
         raise typer.Exit(1)
 
-    # Git workflow setup: fetch/merge main and create a new branch
+    # Git safety: check repo status and create branch
     created_branch = None
-    if cfg.git_workflow:
-        from wiggum.git import (
-            GitError,
-            create_branch,
-            fetch_and_merge_main,
-            generate_branch_name,
-            is_git_repo,
-        )
+    from wiggum.git import (
+        GitError,
+        commit_all,
+        create_branch,
+        generate_branch_name,
+        is_git_repo,
+        is_on_wiggum_branch,
+        is_working_directory_clean,
+        stash_changes,
+    )
 
-        if not is_git_repo():
-            typer.echo("Error: --git requires a git repository", err=True)
+    in_git_repo = is_git_repo()
+
+    # Handle non-git-repo case
+    if not in_git_repo:
+        if not cfg.force:
+            typer.echo("Warning: Not a git repository. Changes cannot be undone.")
+            if not typer.confirm("Continue without git safety?", default=False):
+                raise typer.Exit(0)
+    else:
+        # In a git repo - apply safety checks unless --force or --no-branch
+        if not cfg.force and not cfg.no_branch:
+            # Check for uncommitted changes
+            if not is_working_directory_clean():
+                typer.echo("\nYou have uncommitted changes.")
+                typer.echo("What would you like to do?")
+                typer.echo("  [S]tash - Stash changes and continue")
+                typer.echo("  [C]ommit - Commit changes with a message")
+                typer.echo("  [A]bort - Exit without running")
+
+                choice = typer.prompt("Choice [S/C/A]", default="A").upper()
+
+                if choice == "S":
+                    try:
+                        stash_changes("wiggum: auto-stash before loop")
+                        typer.echo("Changes stashed. Run `git stash pop` to restore.")
+                    except GitError as e:
+                        typer.echo(f"Error stashing changes: {e}", err=True)
+                        raise typer.Exit(1)
+                elif choice == "C":
+                    message = typer.prompt(
+                        "Commit message", default="WIP: checkpoint before wiggum loop"
+                    )
+                    try:
+                        commit_all(message)
+                        typer.echo(f"Changes committed: {message}")
+                    except GitError as e:
+                        typer.echo(f"Error committing changes: {e}", err=True)
+                        raise typer.Exit(1)
+                else:
+                    typer.echo("Aborted.")
+                    raise typer.Exit(0)
+
+            # Create branch (unless already on a wiggum branch)
+            if is_on_wiggum_branch(cfg.branch_prefix):
+                typer.echo("Already on a wiggum branch, continuing...")
+            else:
+                created_branch = generate_branch_name(cfg.branch_prefix)
+                try:
+                    create_branch(created_branch)
+                    typer.echo(f"Created branch: {created_branch}")
+                except GitError as e:
+                    typer.echo(f"Error creating branch: {e}", err=True)
+                    raise typer.Exit(1)
+
+    # Validate gh CLI if PR creation is requested
+    if cfg.create_pr:
+        if not in_git_repo:
+            typer.echo("Error: --pr requires a git repository", err=True)
             raise typer.Exit(1)
-
-        # Validate gh CLI is available for PR creation
         if not check_cli_available("gh"):
             typer.echo(get_cli_error_message("gh"), err=True)
-            raise typer.Exit(1)
-
-        typer.echo("\n--- Git Workflow Setup ---")
-
-        # Fetch and merge main
-        try:
-            if fetch_and_merge_main():
-                typer.echo("Fetched and merged latest from main branch")
-            else:
-                typer.echo("No remote configured - skipping fetch/merge")
-        except GitError as e:
-            typer.echo(f"Warning: Could not fetch/merge main: {e}", err=True)
-
-        # Create a new branch
-        created_branch = generate_branch_name(cfg.branch_prefix)
-        try:
-            create_branch(created_branch)
-            typer.echo(f"Created and switched to branch: {created_branch}")
-        except GitError as e:
-            typer.echo(f"Error creating branch: {e}", err=True)
             raise typer.Exit(1)
 
     def check_stop_conditions() -> Optional[str]:
@@ -328,41 +374,50 @@ def run(
     typer.echo("Loop completed")
     typer.echo(f"{'=' * 60}")
 
-    # Git workflow teardown: push branch and create PR
-    if cfg.git_workflow and created_branch:
+    # Show git summary and handle PR creation
+    if in_git_repo and created_branch:
         from wiggum.git import (
-            GitError,
-            create_pr,
+            get_current_branch,
             get_main_branch_name,
+            has_remote,
             push_branch,
+            create_pr as git_create_pr,
         )
 
-        typer.echo("\n--- Git Workflow Finalization ---")
+        current = get_current_branch()
+        typer.echo(f"\nChanges are on branch: {current}")
 
-        # Push the branch
-        try:
-            push_branch()
-            typer.echo(f"Pushed branch: {created_branch}")
-        except GitError as e:
-            typer.echo(f"Error pushing branch: {e}", err=True)
-            typer.echo("You may need to push manually and create the PR.")
-            raise typer.Exit(1)
+        if cfg.create_pr:
+            # Push and create PR
+            typer.echo("\n--- Creating PR ---")
+            try:
+                if has_remote():
+                    push_branch()
+                    typer.echo(f"Pushed branch: {current}")
 
-        # Create a PR
-        try:
-            base_branch = get_main_branch_name()
-            pr_title = f"wiggum: automated changes from {created_branch}"
-            pr_body = (
-                "## Summary\n\n"
-                "Automated changes made by wiggum loop.\n\n"
-                f"See TASKS.md for completed tasks.\n\n"
-                f"Branch: `{created_branch}`"
-            )
-            pr_url = create_pr(title=pr_title, body=pr_body, base=base_branch)
-            typer.echo(f"Created PR: {pr_url}")
-        except GitError as e:
-            typer.echo(f"Error creating PR: {e}", err=True)
-            typer.echo(f"Branch '{created_branch}' was pushed. Create PR manually.")
+                    base_branch = get_main_branch_name()
+                    pr_title = f"wiggum: automated changes from {current}"
+                    pr_body = (
+                        "## Summary\n\n"
+                        "Automated changes made by wiggum loop.\n\n"
+                        f"See TASKS.md for completed tasks.\n\n"
+                        f"Branch: `{current}`"
+                    )
+                    pr_url = git_create_pr(
+                        title=pr_title, body=pr_body, base=base_branch
+                    )
+                    typer.echo(f"Created PR: {pr_url}")
+                else:
+                    typer.echo("No remote configured. Cannot create PR.")
+            except GitError as e:
+                typer.echo(f"Error: {e}", err=True)
+                typer.echo("You may need to push and create PR manually.")
+        else:
+            # Show next steps
+            typer.echo("\nNext steps:")
+            typer.echo("  Create PR:  gh pr create")
+            typer.echo(f"  Merge:      git checkout main && git merge {current}")
+            typer.echo(f"  Discard:    git checkout main && git branch -D {current}")
 
 
 @app.command()

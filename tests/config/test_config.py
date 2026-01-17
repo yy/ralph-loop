@@ -356,7 +356,9 @@ class TestRunCommandConfig:
             with patch(
                 "wiggum.cli.get_agent", return_value=mock_agent
             ) as mock_get_agent:
-                result = runner.invoke(app, ["run", "-n", "1"])
+                result = runner.invoke(
+                    app, ["run", "-n", "1", "--force", "--no-branch"]
+                )
 
         assert result.exit_code == 0
         mock_get_agent.assert_called_with("gemini")
@@ -380,7 +382,10 @@ class TestRunCommandConfig:
             with patch(
                 "wiggum.cli.get_agent", return_value=mock_agent
             ) as mock_get_agent:
-                result = runner.invoke(app, ["run", "-n", "1", "--agent", "codex"])
+                result = runner.invoke(
+                    app,
+                    ["run", "-n", "1", "--agent", "codex", "--force", "--no-branch"],
+                )
 
         assert result.exit_code == 0
         mock_get_agent.assert_called_with("codex")
@@ -402,7 +407,9 @@ class TestRunCommandConfig:
             with patch(
                 "wiggum.cli.get_agent", return_value=mock_agent
             ) as mock_get_agent:
-                result = runner.invoke(app, ["run", "-n", "1"])
+                result = runner.invoke(
+                    app, ["run", "-n", "1", "--force", "--no-branch"]
+                )
 
         assert result.exit_code == 0
         mock_get_agent.assert_called_with(None)
@@ -415,34 +422,34 @@ class TestRunCommandConfig:
             tmp_path, "[session]\ncontinue_session = true\n"
         )
 
-        call_count = 0
+        configs_received = []
 
-        def mock_subprocess_run(cmd, **kwargs):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
+        def mock_agent_run(config):
+            configs_received.append(config)
+            if len(configs_received) == 1:
                 tasks_file.write_text(
                     "# Tasks\n\n## Todo\n\n- [ ] task2\n\n## Done\n\n- [x] task1\n"
                 )
-            elif call_count == 2:
+            elif len(configs_received) == 2:
                 tasks_file.write_text(
                     "# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n"
                 )
-            return MagicMock(returncode=0, stdout="", stderr="")
+            return AgentResult(stdout="", stderr="", return_code=0)
 
         # Add a second task
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ) as mock_run:
-            result = runner.invoke(app, ["run"])
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
+            result = runner.invoke(app, ["run", "--force", "--no-branch"])
 
         assert result.exit_code == 0
-        assert call_count == 2
-        # Second call should have -c flag
-        second_call_args = mock_run.call_args_list[1][0][0]
-        assert "-c" in second_call_args
+        assert len(configs_received) == 2
+        # Second call should have continue_session=True
+        assert configs_received[1].continue_session is True
 
     def test_reset_flag_overrides_config(self, tmp_path: Path) -> None:
         """CLI --reset flag overrides continue_session=true in config."""
@@ -450,33 +457,33 @@ class TestRunCommandConfig:
             tmp_path, "[session]\ncontinue_session = true\n"
         )
 
-        call_count = 0
+        configs_received = []
 
-        def mock_subprocess_run(cmd, **kwargs):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
+        def mock_agent_run(config):
+            configs_received.append(config)
+            if len(configs_received) == 1:
                 tasks_file.write_text(
                     "# Tasks\n\n## Todo\n\n- [ ] task2\n\n## Done\n\n- [x] task1\n"
                 )
-            elif call_count == 2:
+            elif len(configs_received) == 2:
                 tasks_file.write_text(
                     "# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n"
                 )
-            return MagicMock(returncode=0, stdout="", stderr="")
+            return AgentResult(stdout="", stderr="", return_code=0)
 
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ) as mock_run:
-            result = runner.invoke(app, ["run", "--reset"])
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
+            result = runner.invoke(app, ["run", "--reset", "--force", "--no-branch"])
 
         assert result.exit_code == 0
-        # --reset should override config - NO call should have -c
-        for call_args in mock_run.call_args_list:
-            args = call_args[0][0]
-            assert "-c" not in args
+        # --reset should override config - NO call should have continue_session=True
+        for config in configs_received:
+            assert config.continue_session is False
 
     def test_continue_flag_overrides_config(self, tmp_path: Path) -> None:
         """CLI --continue flag overrides continue_session=false in config."""
@@ -484,32 +491,32 @@ class TestRunCommandConfig:
             tmp_path, "[session]\ncontinue_session = false\n"
         )
 
-        call_count = 0
+        configs_received = []
 
-        def mock_subprocess_run(cmd, **kwargs):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
+        def mock_agent_run(config):
+            configs_received.append(config)
+            if len(configs_received) == 1:
                 tasks_file.write_text(
                     "# Tasks\n\n## Todo\n\n- [ ] task2\n\n## Done\n\n- [x] task1\n"
                 )
-            elif call_count == 2:
+            elif len(configs_received) == 2:
                 tasks_file.write_text(
                     "# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n"
                 )
-            return MagicMock(returncode=0, stdout="", stderr="")
+            return AgentResult(stdout="", stderr="", return_code=0)
 
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ) as mock_run:
-            result = runner.invoke(app, ["run", "--continue"])
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
+            result = runner.invoke(app, ["run", "--continue", "--force", "--no-branch"])
 
         assert result.exit_code == 0
-        # CLI flag should override config - second call should have -c
-        second_call_args = mock_run.call_args_list[1][0][0]
-        assert "-c" in second_call_args
+        # CLI flag should override config - second call should have continue_session=True
+        assert configs_received[1].continue_session is True
 
     # --- dry-run display tests ---
 

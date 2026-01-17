@@ -92,6 +92,86 @@ def get_current_branch(cwd: Optional[Path] = None) -> str:
     return result.stdout.strip()
 
 
+def is_working_directory_clean(cwd: Optional[Path] = None) -> bool:
+    """Check if the working directory is clean (no uncommitted changes).
+
+    Args:
+        cwd: Working directory.
+
+    Returns:
+        True if clean, False if there are uncommitted changes.
+    """
+    result = _run_git(["status", "--porcelain"], cwd=cwd, check=False)
+    return not result.stdout.strip()
+
+
+def stash_changes(
+    message: str = "wiggum: auto-stash", cwd: Optional[Path] = None
+) -> bool:
+    """Stash uncommitted changes.
+
+    Args:
+        message: Stash message.
+        cwd: Working directory.
+
+    Returns:
+        True if changes were stashed, False if nothing to stash.
+
+    Raises:
+        GitError: If stash fails.
+    """
+    if is_working_directory_clean(cwd):
+        return False
+    _run_git(["stash", "push", "-m", message], cwd=cwd)
+    return True
+
+
+def stash_pop(cwd: Optional[Path] = None) -> None:
+    """Pop the most recent stash.
+
+    Args:
+        cwd: Working directory.
+
+    Raises:
+        GitError: If stash pop fails.
+    """
+    _run_git(["stash", "pop"], cwd=cwd)
+
+
+def commit_all(message: str, cwd: Optional[Path] = None) -> bool:
+    """Stage and commit all changes.
+
+    Args:
+        message: Commit message.
+        cwd: Working directory.
+
+    Returns:
+        True if changes were committed, False if nothing to commit.
+
+    Raises:
+        GitError: If commit fails.
+    """
+    if is_working_directory_clean(cwd):
+        return False
+    _run_git(["add", "-A"], cwd=cwd)
+    _run_git(["commit", "-m", message], cwd=cwd)
+    return True
+
+
+def is_on_wiggum_branch(prefix: str = "wiggum", cwd: Optional[Path] = None) -> bool:
+    """Check if currently on a wiggum-created branch.
+
+    Args:
+        prefix: Branch prefix to check for.
+        cwd: Working directory.
+
+    Returns:
+        True if on a wiggum branch, False otherwise.
+    """
+    current = get_current_branch(cwd)
+    return current.startswith(f"{prefix}/")
+
+
 def has_remote(cwd: Optional[Path] = None) -> bool:
     """Check if the repository has a remote configured.
 

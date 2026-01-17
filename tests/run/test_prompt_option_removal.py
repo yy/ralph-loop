@@ -46,6 +46,8 @@ class TestPromptOptionRemoval:
                     str(tasks_file),
                     "-n",
                     "1",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -70,6 +72,8 @@ class TestPromptOptionRemoval:
                     str(tasks_file),
                     "-n",
                     "1",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -129,7 +133,15 @@ class TestPromptFileDefault:
                 mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
                 result = runner.invoke(
                     app,
-                    ["run", "--tasks", str(tasks_file), "-n", "1"],
+                    [
+                        "run",
+                        "--tasks",
+                        str(tasks_file),
+                        "-n",
+                        "1",
+                        "--force",
+                        "--no-branch",
+                    ],
                 )
         finally:
             os.chdir(original_dir)

@@ -36,9 +36,7 @@ class TestCliUsesAgentAbstraction:
 
         mock_agent.run.side_effect = complete_task
 
-        with patch(
-            "wiggum.cli.get_agent", return_value=mock_agent
-        ) as mock_get_agent:
+        with patch("wiggum.cli.get_agent", return_value=mock_agent) as mock_get_agent:
             result = runner.invoke(
                 app,
                 [
@@ -49,6 +47,7 @@ class TestCliUsesAgentAbstraction:
                     str(tasks_file),
                     "-n",
                     "1",
+                    "--force",
                 ],
             )
 
@@ -82,6 +81,7 @@ class TestCliUsesAgentAbstraction:
                     str(tasks_file),
                     "-n",
                     "1",
+                    "--force",
                 ],
             )
 
@@ -118,6 +118,7 @@ class TestCliUsesAgentAbstraction:
                     str(tasks_file),
                     "-n",
                     "1",
+                    "--force",
                 ],
             )
 
@@ -152,6 +153,8 @@ class TestCliUsesAgentAbstraction:
                     "-n",
                     "1",
                     "--yolo",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -187,6 +190,8 @@ class TestCliUsesAgentAbstraction:
                     "1",
                     "--allow-paths",
                     "src/,tests/",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -233,6 +238,7 @@ class TestCliUsesAgentAbstraction:
                     "-n",
                     "5",
                     "--continue",
+                    "--force",
                 ],
             )
 

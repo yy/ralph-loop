@@ -54,7 +54,7 @@ class TestRunStopsOnTasksComplete:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n")
 
-        with patch("wiggum.agents_claude.subprocess.run") as mock_run:
+        with patch("wiggum.cli.get_agent") as mock_get_agent:
             result = runner.invoke(
                 app,
                 [
@@ -65,11 +65,12 @@ class TestRunStopsOnTasksComplete:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
                 ],
             )
 
-        # Claude should never be called because all tasks are complete
-        mock_run.assert_not_called()
+        # Agent should never be called because all tasks are complete
+        mock_get_agent.return_value.run.assert_not_called()
         assert "complete" in result.output.lower()
         assert result.exit_code == 0
 
@@ -103,6 +104,7 @@ class TestRunStopsOnTasksComplete:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
                 ],
             )
 
@@ -147,6 +149,7 @@ class TestRunStopsOnTasksComplete:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
                 ],
             )
 

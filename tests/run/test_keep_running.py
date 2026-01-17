@@ -24,7 +24,7 @@ class TestKeepRunningFlag:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("wiggum.agents_claude.subprocess.run") as mock_run:
+        with patch("wiggum.cli.get_agent") as mock_get_agent:
             result = runner.invoke(
                 app,
                 [
@@ -35,31 +35,30 @@ class TestKeepRunningFlag:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         # Should not call Claude because tasks are done
-        mock_run.assert_not_called()
+        mock_get_agent.return_value.run.assert_not_called()
         assert "complete" in result.output.lower()
         assert result.exit_code == 0
 
     def test_keep_running_continues_when_tasks_complete(self, tmp_path: Path) -> None:
         """With --keep-running, loop continues even when all tasks are complete."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        call_count = 0
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.return_value = AgentResult(stdout="", stderr="", return_code=0)
 
-        def mock_subprocess_run(*args, **kwargs):
-            nonlocal call_count
-            call_count += 1
-            return MagicMock(returncode=0, stdout="", stderr="")
-
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             result = runner.invoke(
                 app,
                 [
@@ -71,15 +70,19 @@ class TestKeepRunningFlag:
                     "-n",
                     "3",
                     "--keep-running",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         # Should run all 3 iterations despite tasks being complete
-        assert call_count == 3
+        assert mock_agent.run.call_count == 3
         assert result.exit_code == 0
 
     def test_keep_running_runs_all_iterations(self, tmp_path: Path) -> None:
         """--keep-running runs for full max_iterations count."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
@@ -88,17 +91,19 @@ class TestKeepRunningFlag:
 
         call_count = 0
 
-        def mock_subprocess_run(*args, **kwargs):
+        def mock_agent_run(config):
             nonlocal call_count
             call_count += 1
             # Mark task complete after first call
             if call_count == 1:
                 tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-            return MagicMock(returncode=0, stdout="", stderr="")
+            return AgentResult(stdout="", stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             result = runner.invoke(
                 app,
                 [
@@ -110,6 +115,8 @@ class TestKeepRunningFlag:
                     "-n",
                     "5",
                     "--keep-running",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -124,7 +131,7 @@ class TestKeepRunningFlag:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("wiggum.agents_claude.subprocess.run") as mock_run:
+        with patch("wiggum.cli.get_agent") as mock_get_agent:
             result = runner.invoke(
                 app,
                 [
@@ -136,11 +143,13 @@ class TestKeepRunningFlag:
                     "-n",
                     "5",
                     "--stop-when-done",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         # Should not call Claude because tasks are done
-        mock_run.assert_not_called()
+        mock_get_agent.return_value.run.assert_not_called()
         assert "complete" in result.output.lower()
         assert result.exit_code == 0
 
@@ -213,6 +222,8 @@ class TestKeepRunningConfig:
 
     def test_config_keep_running_true_continues_loop(self, tmp_path: Path) -> None:
         """Config with keep_running = true continues loop when tasks complete."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
@@ -220,12 +231,9 @@ class TestKeepRunningConfig:
         config_file = tmp_path / ".wiggum.toml"
         config_file.write_text("[loop]\nkeep_running = true\n")
 
-        call_count = 0
-
-        def mock_subprocess_run(*args, **kwargs):
-            nonlocal call_count
-            call_count += 1
-            return MagicMock(returncode=0, stdout="", stderr="")
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.return_value = AgentResult(stdout="", stderr="", return_code=0)
 
         # Change to tmp_path so config file is found
         import os
@@ -233,9 +241,7 @@ class TestKeepRunningConfig:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            with patch(
-                "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-            ):
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
                 result = runner.invoke(
                     app,
                     [
@@ -246,13 +252,15 @@ class TestKeepRunningConfig:
                         str(tasks_file),
                         "-n",
                         "2",
+                        "--force",
+                        "--no-branch",
                     ],
                 )
         finally:
             os.chdir(original_cwd)
 
         # Should run both iterations
-        assert call_count == 2
+        assert mock_agent.run.call_count == 2
         assert result.exit_code == 0
 
     def test_cli_flag_overrides_config(self, tmp_path: Path) -> None:
@@ -269,7 +277,7 @@ class TestKeepRunningConfig:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            with patch("wiggum.agents_claude.subprocess.run") as mock_run:
+            with patch("wiggum.cli.get_agent") as mock_get_agent:
                 result = runner.invoke(
                     app,
                     [
@@ -281,13 +289,15 @@ class TestKeepRunningConfig:
                         "-n",
                         "5",
                         "--stop-when-done",
+                        "--force",
+                        "--no-branch",
                     ],
                 )
         finally:
             os.chdir(original_cwd)
 
         # Should not run because --stop-when-done overrides config
-        mock_run.assert_not_called()
+        mock_get_agent.return_value.run.assert_not_called()
         assert "complete" in result.output.lower()
         assert result.exit_code == 0
 

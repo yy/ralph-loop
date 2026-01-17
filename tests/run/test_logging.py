@@ -16,19 +16,25 @@ class TestLogFileOption:
 
     def test_log_file_is_created_when_specified(self, tmp_path: Path) -> None:
         """When --log-file is specified, the log file is created."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
-        def mock_subprocess_run(cmd, **kwargs):
+        def mock_agent_run(config):
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-            return MagicMock(returncode=0, stdout="Test output from claude")
+            return AgentResult(
+                stdout="Test output from claude", stderr="", return_code=0
+            )
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             result = runner.invoke(
                 app,
                 [
@@ -41,6 +47,8 @@ class TestLogFileOption:
                     str(log_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -49,19 +57,23 @@ class TestLogFileOption:
 
     def test_no_log_file_created_without_option(self, tmp_path: Path) -> None:
         """Without --log-file, no log file is created."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
-        def mock_subprocess_run(cmd, **kwargs):
+        def mock_agent_run(config):
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-            return MagicMock(returncode=0, stdout="Test output")
+            return AgentResult(stdout="Test output", stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             result = runner.invoke(
                 app,
                 [
@@ -72,6 +84,8 @@ class TestLogFileOption:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -84,19 +98,23 @@ class TestLogFileContent:
 
     def test_log_contains_iteration_number(self, tmp_path: Path) -> None:
         """Log entries include the iteration number."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
-        def mock_subprocess_run(cmd, **kwargs):
+        def mock_agent_run(config):
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-            return MagicMock(returncode=0, stdout="Claude output here")
+            return AgentResult(stdout="Claude output here", stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             runner.invoke(
                 app,
                 [
@@ -109,6 +127,8 @@ class TestLogFileContent:
                     str(log_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -118,19 +138,23 @@ class TestLogFileContent:
 
     def test_log_contains_timestamp(self, tmp_path: Path) -> None:
         """Log entries include a timestamp."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
-        def mock_subprocess_run(cmd, **kwargs):
+        def mock_agent_run(config):
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-            return MagicMock(returncode=0, stdout="Claude output here")
+            return AgentResult(stdout="Claude output here", stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             runner.invoke(
                 app,
                 [
@@ -143,6 +167,8 @@ class TestLogFileContent:
                     str(log_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -153,6 +179,8 @@ class TestLogFileContent:
 
     def test_log_contains_claude_output(self, tmp_path: Path) -> None:
         """Log entries include the output from claude."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
@@ -161,13 +189,15 @@ class TestLogFileContent:
 
         expected_output = "This is unique test output from claude 12345"
 
-        def mock_subprocess_run(cmd, **kwargs):
+        def mock_agent_run(config):
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-            return MagicMock(returncode=0, stdout=expected_output)
+            return AgentResult(stdout=expected_output, stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             runner.invoke(
                 app,
                 [
@@ -180,6 +210,8 @@ class TestLogFileContent:
                     str(log_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -192,6 +224,8 @@ class TestLogFileMultipleIterations:
 
     def test_log_appends_multiple_iterations(self, tmp_path: Path) -> None:
         """Log file contains entries for all iterations."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
@@ -202,7 +236,7 @@ class TestLogFileMultipleIterations:
 
         call_count = 0
 
-        def mock_subprocess_run(cmd, **kwargs):
+        def mock_agent_run(config):
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -217,11 +251,15 @@ class TestLogFileMultipleIterations:
                 tasks_file.write_text(
                     "# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n- [x] task3\n"
                 )
-            return MagicMock(returncode=0, stdout=f"Output for iteration {call_count}")
+            return AgentResult(
+                stdout=f"Output for iteration {call_count}", stderr="", return_code=0
+            )
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             runner.invoke(
                 app,
                 [
@@ -234,6 +272,8 @@ class TestLogFileMultipleIterations:
                     str(log_file),
                     "-n",
                     "10",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -248,6 +288,8 @@ class TestLogFileMultipleIterations:
 
     def test_log_appends_to_existing_file(self, tmp_path: Path) -> None:
         """Log file appends to existing content (doesn't overwrite)."""
+        from wiggum.agents import AgentResult
+
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
@@ -258,13 +300,15 @@ class TestLogFileMultipleIterations:
         existing_content = "Previous log entry\n"
         log_file.write_text(existing_content)
 
-        def mock_subprocess_run(cmd, **kwargs):
+        def mock_agent_run(config):
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-            return MagicMock(returncode=0, stdout="New output")
+            return AgentResult(stdout="New output", stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             runner.invoke(
                 app,
                 [
@@ -277,6 +321,8 @@ class TestLogFileMultipleIterations:
                     str(log_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 

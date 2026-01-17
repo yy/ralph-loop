@@ -16,32 +16,35 @@ class TestContinueFlag:
     def test_continue_flag_passes_continue_to_claude_after_first_iteration(
         self, tmp_path: Path
     ) -> None:
-        """With --continue, claude is called with -c flag after the first iteration."""
+        """With --continue, agent is called with continue_session=True after the first iteration."""
+        from wiggum.agents import AgentResult
+
         # Setup
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
-        call_count = 0
+        configs_received = []
 
-        def mock_subprocess_run(cmd, **kwargs):
-            nonlocal call_count
-            call_count += 1
+        def mock_agent_run(config):
+            configs_received.append(config)
             # Mark tasks complete one by one
-            if call_count == 1:
+            if len(configs_received) == 1:
                 tasks_file.write_text(
                     "# Tasks\n\n## Todo\n\n- [ ] task2\n\n## Done\n\n- [x] task1\n"
                 )
-            elif call_count == 2:
+            elif len(configs_received) == 2:
                 tasks_file.write_text(
                     "# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n"
                 )
-            return MagicMock(returncode=0)
+            return AgentResult(stdout="", stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ) as mock_run:
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+        mock_agent.run.side_effect = mock_agent_run
+
+        with patch("wiggum.cli.get_agent", return_value=mock_agent):
             result = runner.invoke(
                 app,
                 [
@@ -53,19 +56,19 @@ class TestContinueFlag:
                     "-n",
                     "5",
                     "--continue",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
         assert result.exit_code == 0
-        assert call_count == 2
+        assert len(configs_received) == 2
 
-        # First call should NOT have -c flag
-        first_call_args = mock_run.call_args_list[0][0][0]
-        assert "-c" not in first_call_args
+        # First call should NOT have continue_session=True
+        assert configs_received[0].continue_session is False
 
-        # Second call should have -c flag
-        second_call_args = mock_run.call_args_list[1][0][0]
-        assert "-c" in second_call_args
+        # Second call should have continue_session=True
+        assert configs_received[1].continue_session is True
 
     def test_continue_flag_first_iteration_has_no_continue(
         self, tmp_path: Path
@@ -95,6 +98,8 @@ class TestContinueFlag:
                     "-n",
                     "5",
                     "--continue",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -142,6 +147,8 @@ class TestResetFlag:
                     str(tasks_file),
                     "-n",
                     "5",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
@@ -178,6 +185,8 @@ class TestResetFlag:
                     "-n",
                     "5",
                     "--reset",
+                    "--force",
+                    "--no-branch",
                 ],
             )
 
