@@ -27,10 +27,11 @@ class TestInitWritesDefaultLoopConfig:
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
             with patch("wiggum.cli.run_claude_for_planning", return_value=None):
+                # doc files, task, empty, security (1), git (n)
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test goal\nREADME.md\nTask 1\n\n1\n",
+                    input="README.md\nTask 1\n\n1\nn\n",
                 )
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -57,11 +58,11 @@ class TestInitWritesDefaultLoopConfig:
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
             with patch("wiggum.cli.run_claude_for_planning", return_value=None):
-                # Choose yolo mode (option 3) and confirm
+                # doc files, task, empty, yolo mode (3), git (y)
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test goal\nREADME.md\nTask 1\n\n3\ny\n",
+                    input="README.md\nTask 1\n\n3\ny\n",
                 )
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -69,9 +70,10 @@ class TestInitWritesDefaultLoopConfig:
             config_file = Path(".wiggum.toml")
             content = config_file.read_text()
 
-            # Should have both sections
+            # Should have all sections
             assert "[security]" in content
             assert "[loop]" in content
+            assert "[git]" in content
             assert "max_iterations" in content
 
     def test_config_file_format_readable(self, tmp_path: Path) -> None:
@@ -87,10 +89,11 @@ class TestInitWritesDefaultLoopConfig:
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
             with patch("wiggum.cli.run_claude_for_planning", return_value=None):
+                # doc files, task, empty, security (1), git (n)
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test goal\nREADME.md\nTask 1\n\n1\n",
+                    input="README.md\nTask 1\n\n1\nn\n",
                 )
 
             assert result.exit_code == 0

@@ -189,8 +189,8 @@ security_mode: yolo
             with patch(
                 "wiggum.cli.run_claude_for_planning", return_value=claude_output
             ):
-                # Accept suggestions (y), confirm yolo mode (y)
-                result = runner.invoke(app, ["init"], input="y\ny\n")
+                # Accept suggestions (y), git (n) - yolo mode is auto-applied from constraints
+                result = runner.invoke(app, ["init"], input="y\nn\n")
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), f"Config not created. Output: {result.output}"
@@ -230,8 +230,8 @@ allow_paths: src/,tests/
             with patch(
                 "wiggum.cli.run_claude_for_planning", return_value=claude_output
             ):
-                # Accept suggestions (y)
-                result = runner.invoke(app, ["init"], input="y\n")
+                # Accept suggestions (y), git (n)
+                result = runner.invoke(app, ["init"], input="y\nn\n")
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), f"Config not created. Output: {result.output}"
@@ -271,8 +271,8 @@ security_mode: conservative
             with patch(
                 "wiggum.cli.run_claude_for_planning", return_value=claude_output
             ):
-                # Accept suggestions (y)
-                result = runner.invoke(app, ["init"], input="y\n")
+                # Accept suggestions (y), git (n)
+                result = runner.invoke(app, ["init"], input="y\nn\n")
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), f"Config not created. Output: {result.output}"
@@ -313,7 +313,8 @@ internet_access: true
             with patch(
                 "wiggum.cli.run_claude_for_planning", return_value=claude_output
             ):
-                result = runner.invoke(app, ["init"], input="y\ny\n")
+                # Accept suggestions (y), git (n)
+                result = runner.invoke(app, ["init"], input="y\nn\n")
 
             # Should show security mode in suggestions
             assert (
@@ -351,8 +352,8 @@ Simple project
             with patch(
                 "wiggum.cli.run_claude_for_planning", return_value=claude_output
             ):
-                # Accept suggestions for tasks (y), then manually choose conservative (1)
-                result = runner.invoke(app, ["init"], input="y\n1\n")
+                # Accept suggestions for tasks (y), manually choose conservative (1), git (n)
+                result = runner.invoke(app, ["init"], input="y\n1\nn\n")
 
             # Should still have created config with manual selection
             config_file = Path(".wiggum.toml")

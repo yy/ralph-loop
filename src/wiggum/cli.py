@@ -499,7 +499,15 @@ def init(
         elif security_choice == "3":
             security_yolo = True
 
-    # Write config with security and default loop settings
+    # Git workflow configuration
+    typer.echo("\nGit workflow configuration:")
+    typer.echo("  When enabled, wiggum will:")
+    typer.echo("    - Fetch and merge latest from main branch")
+    typer.echo("    - Create a new branch for the loop")
+    typer.echo("    - Create a PR when the loop completes")
+    git_enabled = typer.confirm("Enable git workflow?", default=False)
+
+    # Write config with security, loop, and git settings
     write_config(
         {
             "security": {
@@ -508,6 +516,9 @@ def init(
             },
             "loop": {
                 "max_iterations": 10,
+            },
+            "git": {
+                "enabled": git_enabled,
             },
         }
     )

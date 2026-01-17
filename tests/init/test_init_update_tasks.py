@@ -50,14 +50,12 @@ Test goal
 - [ ] New task from Claude
 - [ ] Another new task
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
-                # Accept Claude's suggestions, choose conservative security
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
+                # Accept Claude's suggestions, conservative security, git (n)
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="y\n1\n",  # Accept suggestions, conservative mode
+                    input="y\n1\nn\n",
                 )
 
             # Should succeed without --force
@@ -104,13 +102,11 @@ Test goal
 - [ ] Existing task
 - [ ] Brand new task
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="y\n1\n",
+                    input="y\n1\nn\n",
                 )
 
             assert result.exit_code == 0
@@ -156,13 +152,11 @@ Test goal
 
 - [ ] New task
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="y\n1\n",
+                    input="y\n1\nn\n",
                 )
 
             assert result.exit_code == 0
@@ -196,7 +190,7 @@ Test goal
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test goal\nREADME.md\nTask 1\n\n1\n",
+                    input="README.md\nTask 1\n\n1\nn\n",
                 )
 
             # Should error because LOOP-PROMPT.md exists
@@ -232,13 +226,11 @@ Test goal
 
 - [ ] New task only
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(
                     app,
                     ["init", "--force"],
-                    input="y\n1\n",
+                    input="y\n1\nn\n",
                 )
 
             assert result.exit_code == 0
@@ -275,13 +267,11 @@ Test goal
 
 - [ ] New task
 ```"""
-            with patch(
-                "wiggum.cli.run_claude_for_planning", return_value=mock_output
-            ):
+            with patch("wiggum.cli.run_claude_for_planning", return_value=mock_output):
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="y\n1\n",
+                    input="y\n1\nn\n",
                 )
 
             assert result.exit_code == 0
@@ -312,7 +302,7 @@ Test goal
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="My goal\nREADME.md\nManual task 1\nManual task 2\n\n1\n",
+                    input="README.md\nManual task 1\nManual task 2\n\n1\nn\n",
                 )
 
             assert result.exit_code == 0

@@ -25,6 +25,12 @@ uv run pytest
 
 # Run a single test
 uv run pytest tests/test_file.py::test_name -v
+
+# Build (always remove old dist files first)
+rm -rf dist && uv build
+
+# Publish
+uv publish --token <token>
 ```
 
 ## Architecture

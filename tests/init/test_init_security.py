@@ -29,11 +29,11 @@ class TestInitSecurityQuestions:
 
             # Mock Claude to avoid actually calling it
             with patch("wiggum.cli.run_claude_for_planning", return_value=None):
-                # Input: goal, doc files, task, empty line to end tasks, security choice (1=conservative)
+                # Input: doc files, task, empty line to end tasks, security choice (1=conservative), git (n)
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test project goal\nREADME.md\nTask 1\n\n1\n",
+                    input="README.md\nTask 1\n\n1\nn\n",
                 )
 
             config_file = Path(".wiggum.toml")
@@ -56,11 +56,11 @@ class TestInitSecurityQuestions:
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
             with patch("wiggum.cli.run_claude_for_planning", return_value=None):
-                # Choose conservative mode (option 1)
+                # Choose conservative mode (option 1), git (n)
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test project\nREADME.md\nTask 1\n\n1\n",
+                    input="README.md\nTask 1\n\n1\nn\n",
                 )
 
             config_file = Path(".wiggum.toml")
@@ -82,11 +82,11 @@ class TestInitSecurityQuestions:
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
             with patch("wiggum.cli.run_claude_for_planning", return_value=None):
-                # Choose path-restricted mode (option 2) and provide paths
+                # Choose path-restricted mode (option 2), provide paths, git (n)
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test project\nREADME.md\nTask 1\n\n2\nsrc/,tests/\n",
+                    input="README.md\nTask 1\n\n2\nsrc/,tests/\nn\n",
                 )
 
             config_file = Path(".wiggum.toml")
@@ -108,11 +108,11 @@ class TestInitSecurityQuestions:
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
             with patch("wiggum.cli.run_claude_for_planning", return_value=None):
-                # Choose YOLO mode (option 3)
+                # Choose YOLO mode (option 3), git (n)
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test project\nREADME.md\nTask 1\n\n3\n",
+                    input="README.md\nTask 1\n\n3\nn\n",
                 )
 
             config_file = Path(".wiggum.toml")
@@ -193,7 +193,7 @@ class TestSecurityModeDisplay:
                 result = runner.invoke(
                     app,
                     ["init"],
-                    input="Test project\nREADME.md\nTask 1\n\n1\n",
+                    input="README.md\nTask 1\n\n1\nn\n",
                 )
 
             # Check that security options are displayed
