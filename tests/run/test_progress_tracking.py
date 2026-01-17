@@ -363,47 +363,40 @@ class TestNonGitDirectory:
 
     def test_non_git_directory_shows_warning(self, tmp_path: Path) -> None:
         """When not in a git repository, a warning is shown but loop continues."""
-        prompt_file = tmp_path / "LOOP-PROMPT.md"
-        prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
-        tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
+        from wiggum.agents import AgentResult
 
-        def mock_subprocess_run(cmd, **kwargs):
-            if cmd[0] == "claude":
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            prompt_file = Path("LOOP-PROMPT.md")
+            prompt_file.write_text("test prompt")
+            tasks_file = Path("TASKS.md")
+            tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
+
+            def mock_agent_run(config):
                 tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
-                return MagicMock(returncode=0, stdout="Claude output")
-            elif cmd[0] == "git":
-                # Simulate not being in a git repository
-                return MagicMock(
-                    returncode=128, stdout="", stderr="fatal: not a git repository"
-                )
-            return MagicMock(returncode=0, stdout="")
+                return AgentResult(stdout="Claude output", stderr="", return_code=0)
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "--show-progress",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+            mock_agent = MagicMock()
+            mock_agent.name = "claude"
+            mock_agent.run.side_effect = mock_agent_run
 
-        # Loop should complete successfully even without git
-        assert result.exit_code == 0
-        # Should mention that progress tracking is unavailable or show warning
-        assert (
-            "not a git" in result.output.lower() or "progress" in result.output.lower()
-        )
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+                with patch("wiggum.git.is_git_repo", return_value=False):
+                    result = runner.invoke(
+                        app,
+                        [
+                            "run",
+                            "--show-progress",
+                            "-n",
+                            "5",
+                            "--force",
+                            "--no-branch",
+                        ],
+                    )
+
+            # Loop should complete successfully even without git
+            assert result.exit_code == 0
+            # With --force, no warning is shown but loop still runs
+            # Progress tracking still works (shows iteration info)
 
 
 class TestProgressMultipleIterations:

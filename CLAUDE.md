@@ -41,6 +41,7 @@ uv publish --token <token>
 - `wiggum add`: Adds tasks to `TASKS.md`
 - `wiggum list`: Lists all tasks from `TASKS.md` grouped by status (todo/done)
 - `wiggum suggest`: Interactively discovers and suggests tasks using Claude's planning mode. Use `-y`/`--yes` to accept all suggestions without prompting.
+- `wiggum spec <name>`: Creates a new spec file from template in `specs/` directory. Tasks can reference specs like: `- [ ] Implement feature (see specs/feature.md)`
 
 ### Configuration
 Settings are stored in `.wiggum.toml` and read by the `run` command:

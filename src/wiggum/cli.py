@@ -377,20 +377,27 @@ def run(
     # Show git summary and handle PR creation
     if in_git_repo and created_branch:
         from wiggum.git import (
+            commit_all,
+            create_pr as git_create_pr,
             get_current_branch,
             get_main_branch_name,
             has_remote,
+            is_working_directory_clean,
             push_branch,
-            create_pr as git_create_pr,
         )
 
         current = get_current_branch()
         typer.echo(f"\nChanges are on branch: {current}")
 
         if cfg.create_pr:
-            # Push and create PR
+            # Commit, push, and create PR
             typer.echo("\n--- Creating PR ---")
             try:
+                # Commit any changes made during the loop
+                if not is_working_directory_clean():
+                    commit_all(f"wiggum: automated changes from {current}")
+                    typer.echo("Committed changes")
+
                 if has_remote():
                     push_branch()
                     typer.echo(f"Pushed branch: {current}")
@@ -853,6 +860,57 @@ def suggest(
             typer.echo()
 
     typer.echo(f"\nAdded {added_count} task(s) to {tasks_file}")
+
+
+@app.command()
+def spec(
+    name: str = typer.Argument(..., help="Name of the spec (e.g., 'user-auth')"),
+    specs_dir: Path = typer.Option(
+        Path("specs"),
+        "-d",
+        "--dir",
+        help="Directory for spec files (default: specs/)",
+    ),
+    force: bool = typer.Option(
+        False, "-f", "--force", help="Overwrite existing spec file"
+    ),
+    templates_dir: Optional[Path] = typer.Option(
+        None,
+        "--templates",
+        "-t",
+        help="Templates directory (default: package templates)",
+    ),
+) -> None:
+    """Create a new spec file from template."""
+    templates_dir = resolve_templates_dir(templates_dir)
+    spec_template_path = templates_dir / "SPEC.md"
+
+    if not spec_template_path.exists():
+        typer.echo(f"Error: Spec template not found: {spec_template_path}", err=True)
+        raise typer.Exit(1)
+
+    # Create specs directory if it doesn't exist
+    specs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate spec filename
+    spec_file = specs_dir / f"{name}.md"
+
+    if spec_file.exists() and not force:
+        typer.echo(
+            f"Error: {spec_file} already exists. Use --force to overwrite.", err=True
+        )
+        raise typer.Exit(1)
+
+    # Read template and replace placeholders
+    template_content = spec_template_path.read_text()
+    # Convert name to title case for display (user-auth -> User Auth)
+    display_name = name.replace("-", " ").replace("_", " ").title()
+    spec_content = template_content.replace("{{name}}", display_name)
+
+    spec_file.write_text(spec_content)
+    typer.echo(f"Created {spec_file}")
+    typer.echo("\nTo link this spec to a task, add to TASKS.md:")
+    typer.echo(f"  - [ ] Implement {display_name} (see {spec_file})")
 
 
 if __name__ == "__main__":
