@@ -1,5 +1,6 @@
 """CLI interface for wiggum."""
 
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -20,6 +21,7 @@ from wiggum.runner import (
 )
 from wiggum.tasks import (
     add_task_to_file,
+    get_all_tasks,
     get_current_task,
     get_existing_task_descriptions,
     get_existing_tasks_context,
@@ -93,6 +95,21 @@ def run(
         "--identify-tasks",
         help="Analyze codebase and populate TASKS.md with refactoring/cleanup tasks, then exit",
     ),
+    git_workflow: bool = typer.Option(
+        False,
+        "--git",
+        help="Enable git workflow: fetch/merge main, create branch, create PR at end",
+    ),
+    no_git_workflow: bool = typer.Option(
+        False,
+        "--no-git",
+        help="Disable git workflow (default behavior)",
+    ),
+    branch_prefix: Optional[str] = typer.Option(
+        None,
+        "--branch-prefix",
+        help="Prefix for auto-generated branch names (default: 'wiggum')",
+    ),
 ) -> None:
     """Run the agent loop. Stops when all tasks in TASKS.md are complete."""
     # Resolve configuration (CLI flags override config file)
@@ -110,6 +127,9 @@ def run(
             reset_session=reset_session,
             keep_running=keep_running,
             stop_when_done=stop_when_done,
+            git_workflow=git_workflow,
+            no_git_workflow=no_git_workflow,
+            branch_prefix=branch_prefix,
         )
     except ValueError as e:
         typer.echo(f"Error: {e}", err=True)
@@ -175,8 +195,48 @@ def run(
             typer.echo(
                 "Progress tracking: enabled (will show file changes via git status)"
             )
+        if cfg.git_workflow:
+            typer.echo(
+                "Git workflow: enabled (will fetch/merge main, create branch, create PR)"
+            )
+            typer.echo(f"Branch prefix: {cfg.branch_prefix}")
         typer.echo(f"Prompt:\n---\n{prompt}\n---")
         return
+
+    # Git workflow setup: fetch/merge main and create a new branch
+    created_branch = None
+    if cfg.git_workflow:
+        from wiggum.git import (
+            GitError,
+            create_branch,
+            fetch_and_merge_main,
+            generate_branch_name,
+            is_git_repo,
+        )
+
+        if not is_git_repo():
+            typer.echo("Error: --git requires a git repository", err=True)
+            raise typer.Exit(1)
+
+        typer.echo("\n--- Git Workflow Setup ---")
+
+        # Fetch and merge main
+        try:
+            if fetch_and_merge_main():
+                typer.echo("Fetched and merged latest from main branch")
+            else:
+                typer.echo("No remote configured - skipping fetch/merge")
+        except GitError as e:
+            typer.echo(f"Warning: Could not fetch/merge main: {e}", err=True)
+
+        # Create a new branch
+        created_branch = generate_branch_name(cfg.branch_prefix)
+        try:
+            create_branch(created_branch)
+            typer.echo(f"Created and switched to branch: {created_branch}")
+        except GitError as e:
+            typer.echo(f"Error creating branch: {e}", err=True)
+            raise typer.Exit(1)
 
     def check_stop_conditions() -> Optional[str]:
         """Check stop conditions and return exit message if should stop."""
@@ -207,7 +267,10 @@ def run(
             # After first iteration, continue session if requested
             continue_session=cfg.continue_session and i > 1,
         )
+
+        start_time = time.time()
         result = agent_instance.run(agent_config)
+        elapsed = time.time() - start_time
         # Print output to console
         if result.stdout:
             typer.echo(result.stdout)
@@ -219,11 +282,25 @@ def run(
         # Log output to file if requested
         if cfg.log_file:
             write_log_entry(cfg.log_file, i, result.stdout or "")
-        # Show file changes if requested
+        # Show progress info if requested
         if cfg.show_progress:
+            typer.echo("\n--- Iteration Summary ---")
+            # Show elapsed time
+            if elapsed >= 60:
+                minutes = int(elapsed // 60)
+                seconds = int(elapsed % 60)
+                typer.echo(f"Duration: {minutes}m {seconds}s")
+            else:
+                typer.echo(f"Duration: {elapsed:.1f}s")
+            # Show task status
+            task_list = get_all_tasks(cfg.tasks_file)
+            if task_list:
+                todo_count = len(task_list.todo)
+                done_count = len(task_list.done)
+                typer.echo(f"Tasks: {done_count} done, {todo_count} remaining")
+            # Show file changes
             success, changes = get_file_changes()
-            typer.echo("\n--- File Changes ---")
-            typer.echo(changes)
+            typer.echo(f"Files: {changes}")
 
         # Check stop conditions after running
         exit_message = check_stop_conditions()
@@ -234,6 +311,42 @@ def run(
     typer.echo(f"\n{'=' * 60}")
     typer.echo("Loop completed")
     typer.echo(f"{'=' * 60}")
+
+    # Git workflow teardown: push branch and create PR
+    if cfg.git_workflow and created_branch:
+        from wiggum.git import (
+            GitError,
+            create_pr,
+            get_main_branch_name,
+            push_branch,
+        )
+
+        typer.echo("\n--- Git Workflow Finalization ---")
+
+        # Push the branch
+        try:
+            push_branch()
+            typer.echo(f"Pushed branch: {created_branch}")
+        except GitError as e:
+            typer.echo(f"Error pushing branch: {e}", err=True)
+            typer.echo("You may need to push manually and create the PR.")
+            raise typer.Exit(1)
+
+        # Create a PR
+        try:
+            base_branch = get_main_branch_name()
+            pr_title = f"wiggum: automated changes from {created_branch}"
+            pr_body = (
+                "## Summary\n\n"
+                "Automated changes made by wiggum loop.\n\n"
+                f"See TASKS.md for completed tasks.\n\n"
+                f"Branch: `{created_branch}`"
+            )
+            pr_url = create_pr(title=pr_title, body=pr_body, base=base_branch)
+            typer.echo(f"Created PR: {pr_url}")
+        except GitError as e:
+            typer.echo(f"Error creating PR: {e}", err=True)
+            typer.echo(f"Branch '{created_branch}' was pushed. Create PR manually.")
 
 
 @app.command()
@@ -522,6 +635,132 @@ def add(
 
     add_task_to_file(tasks_file, description)
     typer.echo(f"Added task: {description}")
+
+
+@app.command(name="list")
+def list_tasks(
+    tasks_file: Path = typer.Option(
+        Path("TASKS.md"),
+        "-f",
+        "--tasks-file",
+        help="Tasks file to read (default: TASKS.md)",
+    ),
+) -> None:
+    """List tasks from TASKS.md."""
+    task_list = get_all_tasks(tasks_file)
+
+    if task_list is None:
+        typer.echo(f"No tasks file found at {tasks_file}")
+        raise typer.Exit(1)
+
+    # Show todo tasks
+    if task_list.todo:
+        typer.echo("Todo:")
+        for task in task_list.todo:
+            typer.echo(f"  - [ ] {task}")
+    else:
+        typer.echo("Todo: (none)")
+
+    # Show done tasks
+    if task_list.done:
+        typer.echo("\nDone:")
+        for task in task_list.done:
+            typer.echo(f"  - [x] {task}")
+
+
+@app.command()
+def suggest(
+    tasks_file: Path = typer.Option(
+        Path("TASKS.md"),
+        "-f",
+        "--tasks-file",
+        help="Tasks file to add tasks to (default: TASKS.md)",
+    ),
+    accept_all: bool = typer.Option(
+        False,
+        "-y",
+        "--yes",
+        help="Accept all suggested tasks without prompting",
+    ),
+) -> None:
+    """Interactively discover and add tasks using Claude's planning mode."""
+    templates_dir = resolve_templates_dir()
+    meta_prompt_path = templates_dir / "META-PROMPT.md"
+
+    if not meta_prompt_path.exists():
+        typer.echo(f"Error: Meta prompt not found: {meta_prompt_path}", err=True)
+        raise typer.Exit(1)
+
+    typer.echo("Analyzing codebase to suggest tasks...")
+
+    # Build the meta-prompt
+    meta_prompt = meta_prompt_path.read_text()
+
+    readme_path = Path("README.md")
+    if readme_path.exists():
+        readme_content = readme_path.read_text()
+        meta_prompt = meta_prompt.replace(
+            "{{goal}}",
+            f"(Infer from README below)\n\n## README.md\n\n{readme_content}",
+        )
+    else:
+        meta_prompt = meta_prompt.replace(
+            "{{goal}}", "Analyze codebase for refactoring and improvement opportunities"
+        )
+
+    # Include existing tasks context
+    existing_tasks_context = get_existing_tasks_context(tasks_file)
+    meta_prompt = meta_prompt.replace("{{existing_tasks}}", existing_tasks_context)
+
+    # Run Claude for planning
+    output = run_claude_for_planning(meta_prompt)
+
+    if not output:
+        typer.echo("Could not get suggestions (Claude returned no output).")
+        raise typer.Exit(1)
+
+    config = parse_markdown_from_output(output)
+    if not config or not config.get("tasks"):
+        typer.echo("No tasks suggested.")
+        return
+
+    suggested_tasks = config.get("tasks", [])
+
+    # Get existing task descriptions to avoid duplicates
+    existing_task_descs = get_existing_task_descriptions(tasks_file)
+
+    # Filter out tasks that already exist
+    new_tasks = [
+        task for task in suggested_tasks if task.lower() not in existing_task_descs
+    ]
+
+    if not new_tasks:
+        typer.echo("All suggested tasks already exist in TASKS.md.")
+        return
+
+    typer.echo(f"\nFound {len(new_tasks)} new task suggestion(s):\n")
+
+    added_count = 0
+
+    if accept_all:
+        # Add all tasks without prompting
+        for task in new_tasks:
+            add_task_to_file(tasks_file, task)
+            typer.echo(f"  + {task}")
+            added_count += 1
+    else:
+        # Interactive mode: prompt for each task
+        for task in new_tasks:
+            typer.echo(f"  - {task}")
+            if typer.confirm("    Add this task?", default=True):
+                add_task_to_file(tasks_file, task)
+                added_count += 1
+                typer.echo("    Added.")
+            else:
+                typer.echo("    Skipped.")
+            typer.echo()
+
+    typer.echo(f"\nAdded {added_count} task(s) to {tasks_file}")
 
 
 if __name__ == "__main__":

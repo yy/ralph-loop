@@ -31,8 +31,10 @@ uv run pytest tests/test_file.py::test_name -v
 
 ### CLI Commands
 - `wiggum init`: Interactive setup that creates `LOOP-PROMPT.md`, `TASKS.md`, and `.wiggum.toml`. Claude analyzes the codebase and suggests both tasks and security constraints. If `TASKS.md` already exists, new tasks are merged (without duplicates) rather than overwriting.
-- `wiggum run`: Executes the loop, reading prompt from file and iterating until all tasks in TASKS.md are complete (or max iterations reached). Use `--keep-running` to continue even when tasks are complete (agent can add new tasks). Use `--identify-tasks` to analyze the codebase and populate TASKS.md with refactoring/cleanup tasks without running the loop.
+- `wiggum run`: Executes the loop, reading prompt from file and iterating until all tasks in TASKS.md are complete (or max iterations reached). Use `--keep-running` to continue even when tasks are complete (agent can add new tasks). Use `--identify-tasks` to analyze the codebase and populate TASKS.md with refactoring/cleanup tasks without running the loop. Use `--git` to enable git workflow (fetch/merge main, create branch, create PR at end).
 - `wiggum add`: Adds tasks to `TASKS.md`
+- `wiggum list`: Lists all tasks from `TASKS.md` grouped by status (todo/done)
+- `wiggum suggest`: Interactively discovers and suggests tasks using Claude's planning mode. Use `-y`/`--yes` to accept all suggestions without prompting.
 
 ### Configuration
 Settings are stored in `.wiggum.toml` and read by the `run` command:
@@ -45,6 +47,10 @@ Settings are stored in `.wiggum.toml` and read by the `run` command:
 - `max_iterations`: Default number of loop iterations (default: 10)
 - `agent`: Which agent to use (default: "claude"). Options: claude, codex, gemini
 
+**[git] section:**
+- `enabled`: Enable git workflow (default: false)
+- `branch_prefix`: Prefix for auto-generated branch names (default: "wiggum")
+
 CLI flags override config file settings.
 
 ### Agent Abstraction Layer
@@ -55,7 +61,6 @@ The `agents` module provides a pluggable architecture for different coding agent
 - `AgentResult`: Dataclass for agent output (stdout, stderr, return_code)
 - `get_agent(name)`: Get an agent by name (default: "claude")
 - `get_available_agents()`: List registered agents
-- `@register_agent`: Decorator to register new agent implementations
 
 Agent implementations live in separate files (e.g., `agents_claude.py`, `agents_codex.py`).
 

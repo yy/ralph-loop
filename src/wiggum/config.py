@@ -25,6 +25,8 @@ class ResolvedRunConfig:
     show_progress: bool
     continue_session: bool
     keep_running: bool
+    git_workflow: bool
+    branch_prefix: str
 
 
 def resolve_run_config(
@@ -41,6 +43,9 @@ def resolve_run_config(
     reset_session: bool,
     keep_running: bool,
     stop_when_done: bool,
+    git_workflow: bool = False,
+    no_git_workflow: bool = False,
+    branch_prefix: Optional[str] = None,
 ) -> ResolvedRunConfig:
     """Resolve run configuration from CLI flags and config file.
 
@@ -60,6 +65,9 @@ def resolve_run_config(
         reset_session: CLI --reset flag
         keep_running: CLI --keep-running flag
         stop_when_done: CLI --stop-when-done flag
+        git_workflow: CLI --git flag
+        no_git_workflow: CLI --no-git flag
+        branch_prefix: CLI --branch-prefix value
 
     Returns:
         ResolvedRunConfig with all values resolved.
@@ -120,12 +128,24 @@ def resolve_run_config(
         raise ValueError(
             "--keep-running and --stop-when-done are mutually exclusive. Cannot use both."
         )
+    if git_workflow and no_git_workflow:
+        raise ValueError("--git and --no-git are mutually exclusive. Cannot use both.")
 
     # Resolve keep_running
     resolved_keep_running = keep_running
     if not keep_running and not stop_when_done:
         if loop_config.get("keep_running", False):
             resolved_keep_running = True
+
+    # Resolve git workflow config
+    git_config = config.get("git", {})
+    resolved_git_workflow = git_workflow
+    if not git_workflow and not no_git_workflow:
+        if git_config.get("enabled", False):
+            resolved_git_workflow = True
+    resolved_branch_prefix = branch_prefix
+    if branch_prefix is None:
+        resolved_branch_prefix = git_config.get("branch_prefix", "wiggum")
 
     return ResolvedRunConfig(
         yolo=resolved_yolo,
@@ -138,6 +158,8 @@ def resolve_run_config(
         show_progress=resolved_show_progress,
         continue_session=resolved_continue_session,
         keep_running=resolved_keep_running,
+        git_workflow=resolved_git_workflow,
+        branch_prefix=resolved_branch_prefix,
     )
 
 

@@ -1,8 +1,17 @@
 """Task management for wiggum."""
 
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
+
+
+@dataclass
+class TaskList:
+    """Parsed task list from TASKS.md."""
+
+    todo: list[str] = field(default_factory=list)
+    done: list[str] = field(default_factory=list)
 
 
 def tasks_remaining(tasks_file: Path = Path("TASKS.md")) -> bool:
@@ -168,3 +177,28 @@ def add_task_to_file(tasks_file: Path, task_description: str) -> None:
             content += "\n"
         content += f"\n## Todo\n\n{task_line}"
         tasks_file.write_text(content)
+
+
+def get_all_tasks(tasks_file: Path = Path("TASKS.md")) -> Optional[TaskList]:
+    """Get all tasks from TASKS.md grouped by status.
+
+    Args:
+        tasks_file: Path to the tasks file.
+
+    Returns:
+        TaskList with todo and done tasks, or None if file doesn't exist.
+    """
+    if not tasks_file.exists():
+        return None
+
+    content = tasks_file.read_text()
+
+    # Find unchecked tasks: - [ ]
+    todo = re.findall(r"^- \[ \] (.+)$", content, re.MULTILINE)
+    # Find checked tasks: - [x] or - [X]
+    done = re.findall(r"^- \[[xX]\] (.+)$", content, re.MULTILINE)
+
+    return TaskList(
+        todo=[t.strip() for t in todo],
+        done=[t.strip() for t in done],
+    )
