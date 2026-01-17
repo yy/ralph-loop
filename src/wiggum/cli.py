@@ -881,7 +881,14 @@ def spec(
         help="Templates directory (default: package templates)",
     ),
 ) -> None:
-    """Create a new spec file from template."""
+    """Create a new spec file from template.
+
+    Spec files are detailed design documents for complex features or changes.
+    Tasks in TASKS.md can reference specs like: `- [ ] Implement feature (see specs/feature.md)`
+
+    The spec template includes sections for overview, requirements, implementation details,
+    and test plan. Edit the generated file to fill in the specifics of your feature.
+    """
     templates_dir = resolve_templates_dir(templates_dir)
     spec_template_path = templates_dir / "SPEC.md"
 
