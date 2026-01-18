@@ -44,8 +44,13 @@ class TestContinueFlag:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -84,10 +89,15 @@ class TestContinueFlag:
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0)
 
-        with patch(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch(
             "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ) as mock_run:
-            result = runner.invoke(
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -134,10 +144,15 @@ class TestResetFlag:
                 )
             return MagicMock(returncode=0)
 
-        with patch(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch(
             "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ) as mock_run:
-            result = runner.invoke(
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -171,10 +186,15 @@ class TestResetFlag:
             tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0)
 
-        with patch(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch(
             "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ) as mock_run:
-            result = runner.invoke(
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -206,8 +226,13 @@ class TestContinueAndResetMutualExclusion:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
-        with patch("wiggum.agents_claude.subprocess.run"):
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.agents_claude.subprocess.run"):
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",

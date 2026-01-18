@@ -21,8 +21,13 @@ class TestDefaultStopCondition:
         # All tasks complete
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("wiggum.cli.get_agent") as mock_get_agent:
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent") as mock_get_agent:
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -50,8 +55,13 @@ class TestDefaultStopCondition:
         # All tasks complete in custom file
         custom_tasks.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("wiggum.cli.get_agent") as mock_get_agent:
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent") as mock_get_agent:
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",

@@ -24,8 +24,13 @@ class TestKeepRunningFlag:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("wiggum.cli.get_agent") as mock_get_agent:
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent") as mock_get_agent:
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -58,8 +63,13 @@ class TestKeepRunningFlag:
         mock_agent.name = "claude"
         mock_agent.run.return_value = AgentResult(stdout="", stderr="", return_code=0)
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -103,8 +113,13 @@ class TestKeepRunningFlag:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -131,8 +146,13 @@ class TestKeepRunningFlag:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
-        with patch("wiggum.cli.get_agent") as mock_get_agent:
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent") as mock_get_agent:
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -241,8 +261,11 @@ class TestKeepRunningConfig:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            with patch("wiggum.cli.get_agent", return_value=mock_agent):
-                result = runner.invoke(
+            with patch("wiggum.agents.check_cli_available", return_value=True):
+
+                with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+                    result = runner.invoke(
                     app,
                     [
                         "run",
@@ -277,8 +300,11 @@ class TestKeepRunningConfig:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            with patch("wiggum.cli.get_agent") as mock_get_agent:
-                result = runner.invoke(
+            with patch("wiggum.agents.check_cli_available", return_value=True):
+
+                with patch("wiggum.cli.get_agent") as mock_get_agent:
+
+                    result = runner.invoke(
                     app,
                     [
                         "run",

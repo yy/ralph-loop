@@ -443,8 +443,13 @@ class TestRunCommandConfig:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(app, ["run", "--force", "--no-branch"])
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(app, ["run", "--force", "--no-branch"])
 
         assert result.exit_code == 0
         assert len(configs_received) == 2
@@ -477,8 +482,13 @@ class TestRunCommandConfig:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(app, ["run", "--reset", "--force", "--no-branch"])
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(app, ["run", "--reset", "--force", "--no-branch"])
 
         assert result.exit_code == 0
         # --reset should override config - NO call should have continue_session=True
@@ -511,8 +521,13 @@ class TestRunCommandConfig:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(app, ["run", "--continue", "--force", "--no-branch"])
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(app, ["run", "--continue", "--force", "--no-branch"])
 
         assert result.exit_code == 0
         # CLI flag should override config - second call should have continue_session=True
