@@ -34,8 +34,13 @@ class TestLogFileOption:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -73,8 +78,13 @@ class TestLogFileOption:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -114,8 +124,13 @@ class TestLogFileContent:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",
@@ -154,8 +169,13 @@ class TestLogFileContent:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",
@@ -197,8 +217,13 @@ class TestLogFileContent:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",
@@ -259,8 +284,13 @@ class TestLogFileMultipleIterations:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",
@@ -308,8 +338,13 @@ class TestLogFileMultipleIterations:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",

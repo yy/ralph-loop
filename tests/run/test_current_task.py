@@ -100,8 +100,13 @@ class TestRunDisplaysCurrentTask:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -127,8 +132,13 @@ class TestRunDisplaysCurrentTask:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] All done\n")
 
-        with patch("wiggum.cli.get_agent") as mock_get_agent:
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent") as mock_get_agent:
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",

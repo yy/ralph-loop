@@ -54,8 +54,13 @@ class TestRunStopsOnTasksComplete:
         tasks_file = tmp_path / "TASKS.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n")
 
-        with patch("wiggum.cli.get_agent") as mock_get_agent:
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent") as mock_get_agent:
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -91,10 +96,15 @@ class TestRunStopsOnTasksComplete:
                 tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
             return MagicMock(returncode=0, stdout="", stderr="")
 
-        with patch(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch(
             "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ):
-            result = runner.invoke(
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -136,10 +146,15 @@ class TestRunStopsOnTasksComplete:
                 )
             return MagicMock(returncode=0, stdout="", stderr="")
 
-        with patch(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch(
             "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
         ):
-            result = runner.invoke(
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",

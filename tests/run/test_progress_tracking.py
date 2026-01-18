@@ -32,24 +32,25 @@ class TestVerboseFlag:
                 return MagicMock(returncode=0, stdout=" M file.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "-v",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch(
+                "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+            ):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "-v",
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         assert git_was_called
@@ -73,24 +74,25 @@ class TestVerboseFlag:
                 return MagicMock(returncode=0, stdout=" M file.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "--verbose",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch(
+                "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+            ):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "--verbose",
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         assert git_was_called
@@ -141,24 +143,25 @@ class TestShowProgressFlag:
                 )
             return MagicMock(returncode=0, stdout="")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "--show-progress",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch(
+                "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+            ):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "--show-progress",
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         # Should show file changes in output
@@ -181,21 +184,22 @@ class TestShowProgressFlag:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         # Without --show-progress, should not show file change information
@@ -221,24 +225,25 @@ class TestProgressOutput:
                 return MagicMock(returncode=0, stdout=" M modified_file.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "--show-progress",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch(
+                "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+            ):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "--show-progress",
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         assert (
@@ -260,24 +265,25 @@ class TestProgressOutput:
                 return MagicMock(returncode=0, stdout="?? new_file.txt\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "--show-progress",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch(
+                "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+            ):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "--show-progress",
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         assert "new" in result.output.lower() or "new_file.txt" in result.output
@@ -297,24 +303,25 @@ class TestProgressOutput:
                 return MagicMock(returncode=0, stdout=" D deleted_file.py\n")
             return MagicMock(returncode=0, stdout="")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "--show-progress",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch(
+                "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+            ):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "--show-progress",
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         assert "deleted" in result.output.lower() or "deleted_file.py" in result.output
@@ -334,24 +341,25 @@ class TestProgressOutput:
                 return MagicMock(returncode=0, stdout="")
             return MagicMock(returncode=0, stdout="")
 
-        with patch(
-            "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
-        ):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "--show-progress",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch(
+                "wiggum.agents_claude.subprocess.run", side_effect=mock_subprocess_run
+            ):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "--show-progress",
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         # Should show message about no changes
@@ -379,19 +387,20 @@ class TestNonGitDirectory:
             mock_agent.name = "claude"
             mock_agent.run.side_effect = mock_agent_run
 
-            with patch("wiggum.cli.get_agent", return_value=mock_agent):
-                with patch("wiggum.git.is_git_repo", return_value=False):
-                    result = runner.invoke(
-                        app,
-                        [
-                            "run",
-                            "--show-progress",
-                            "-n",
-                            "5",
-                            "--force",
-                            "--no-branch",
-                        ],
-                    )
+            with patch("wiggum.agents.check_cli_available", return_value=True):
+                with patch("wiggum.cli.get_agent", return_value=mock_agent):
+                    with patch("wiggum.git.is_git_repo", return_value=False):
+                        result = runner.invoke(
+                            app,
+                            [
+                                "run",
+                                "--show-progress",
+                                "-n",
+                                "5",
+                                "--force",
+                                "--no-branch",
+                            ],
+                        )
 
             # Loop should complete successfully even without git
             assert result.exit_code == 0
@@ -430,22 +439,23 @@ class TestProgressMultipleIterations:
         mock_agent.name = "claude"
         mock_agent.run.side_effect = mock_agent_run
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
-                app,
-                [
-                    "run",
-                    "-f",
-                    str(prompt_file),
-                    "--tasks",
-                    str(tasks_file),
-                    "--show-progress",
-                    "-n",
-                    "5",
-                    "--force",
-                    "--no-branch",
-                ],
-            )
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+                result = runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "--show-progress",
+                        "-n",
+                        "5",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
 
         assert result.exit_code == 0
         # Agent should have been called twice (2 tasks)

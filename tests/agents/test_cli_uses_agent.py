@@ -36,8 +36,13 @@ class TestCliUsesAgentAbstraction:
 
         mock_agent.run.side_effect = complete_task
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent) as mock_get_agent:
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent) as mock_get_agent:
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -70,8 +75,13 @@ class TestCliUsesAgentAbstraction:
 
         mock_agent.run.side_effect = complete_task
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            result = runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                result = runner.invoke(
                 app,
                 [
                     "run",
@@ -107,8 +117,13 @@ class TestCliUsesAgentAbstraction:
 
         mock_agent.run.side_effect = complete_task
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",
@@ -141,8 +156,13 @@ class TestCliUsesAgentAbstraction:
 
         mock_agent.run.side_effect = complete_task
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",
@@ -177,8 +197,13 @@ class TestCliUsesAgentAbstraction:
 
         mock_agent.run.side_effect = complete_task
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",
@@ -226,8 +251,13 @@ class TestCliUsesAgentAbstraction:
 
         mock_agent.run.side_effect = complete_task
 
-        with patch("wiggum.cli.get_agent", return_value=mock_agent):
-            runner.invoke(
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+
+                runner.invoke(
                 app,
                 [
                     "run",
