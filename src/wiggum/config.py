@@ -215,11 +215,13 @@ def resolve_templates_dir(override: Path | None = None) -> Path:
         override: Explicit templates directory to use. If provided, returns this.
 
     Returns:
-        Templates directory path. Checks for local 'templates/' first,
-        then falls back to package templates.
+        Templates directory path. Checks for local 'templates/' first
+        (only if it contains wiggum templates), then falls back to package templates.
     """
     if override is not None:
         return override
-    if Path("templates").is_dir():
-        return Path("templates")
+    # Only use local templates/ if it contains wiggum templates
+    local_templates = Path("templates")
+    if local_templates.is_dir() and (local_templates / "LOOP-PROMPT.md").exists():
+        return local_templates
     return get_templates_dir()
