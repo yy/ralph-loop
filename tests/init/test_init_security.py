@@ -210,3 +210,115 @@ class TestSecurityModeDisplay:
             assert "conservative" in result.output.lower() or "1)" in result.output
             assert "path" in result.output.lower() or "2)" in result.output
             assert "yolo" in result.output.lower() or "3)" in result.output
+
+
+class TestInitUpdatesGitignore:
+    """Tests for .gitignore updates during init."""
+
+    def test_init_adds_wiggum_to_existing_gitignore(self, tmp_path: Path) -> None:
+        """Init adds .wiggum/ to existing .gitignore if not present."""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            Path("templates").mkdir()
+            (Path("templates") / "LOOP-PROMPT.md").write_text(
+                "## Goal\n\n{{goal}}\n\n## Workflow\n"
+            )
+            (Path("templates") / "TASKS.md").write_text(
+                "# Tasks\n\n## Todo\n\n{{tasks}}\n"
+            )
+            (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
+            # Create existing .gitignore
+            Path(".gitignore").write_text("node_modules/\n.env\n")
+
+            with patch(
+                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
+            ):
+                result = runner.invoke(
+                    app,
+                    ["init"],
+                    input="README.md\nTask 1\n\n1\nn\n",
+                )
+
+            assert result.exit_code == 0, f"Init failed: {result.output}"
+            gitignore_content = Path(".gitignore").read_text()
+            assert ".wiggum/" in gitignore_content
+
+    def test_init_preserves_existing_gitignore_entries(self, tmp_path: Path) -> None:
+        """Init preserves existing .gitignore entries."""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            Path("templates").mkdir()
+            (Path("templates") / "LOOP-PROMPT.md").write_text(
+                "## Goal\n\n{{goal}}\n\n## Workflow\n"
+            )
+            (Path("templates") / "TASKS.md").write_text(
+                "# Tasks\n\n## Todo\n\n{{tasks}}\n"
+            )
+            (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
+            # Create existing .gitignore
+            Path(".gitignore").write_text("node_modules/\n.env\n")
+
+            with patch(
+                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
+            ):
+                result = runner.invoke(
+                    app,
+                    ["init"],
+                    input="README.md\nTask 1\n\n1\nn\n",
+                )
+
+            assert result.exit_code == 0
+            gitignore_content = Path(".gitignore").read_text()
+            assert "node_modules/" in gitignore_content
+            assert ".env" in gitignore_content
+
+    def test_init_does_not_duplicate_wiggum_in_gitignore(self, tmp_path: Path) -> None:
+        """Init does not add .wiggum/ if already in .gitignore."""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            Path("templates").mkdir()
+            (Path("templates") / "LOOP-PROMPT.md").write_text(
+                "## Goal\n\n{{goal}}\n\n## Workflow\n"
+            )
+            (Path("templates") / "TASKS.md").write_text(
+                "# Tasks\n\n## Todo\n\n{{tasks}}\n"
+            )
+            (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
+            # Create .gitignore with .wiggum/ already present
+            Path(".gitignore").write_text(".wiggum/\nnode_modules/\n")
+
+            with patch(
+                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
+            ):
+                result = runner.invoke(
+                    app,
+                    ["init"],
+                    input="README.md\nTask 1\n\n1\nn\n",
+                )
+
+            assert result.exit_code == 0
+            gitignore_content = Path(".gitignore").read_text()
+            # Should appear only once
+            assert gitignore_content.count(".wiggum/") == 1
+
+    def test_init_creates_gitignore_if_missing(self, tmp_path: Path) -> None:
+        """Init does not create .gitignore if it doesn't exist."""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            Path("templates").mkdir()
+            (Path("templates") / "LOOP-PROMPT.md").write_text(
+                "## Goal\n\n{{goal}}\n\n## Workflow\n"
+            )
+            (Path("templates") / "TASKS.md").write_text(
+                "# Tasks\n\n## Todo\n\n{{tasks}}\n"
+            )
+            (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
+
+            with patch(
+                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
+            ):
+                result = runner.invoke(
+                    app,
+                    ["init"],
+                    input="README.md\nTask 1\n\n1\nn\n",
+                )
+
+            assert result.exit_code == 0
+            # Should not create .gitignore if it didn't exist
+            assert not Path(".gitignore").exists()

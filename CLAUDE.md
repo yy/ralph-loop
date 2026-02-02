@@ -61,7 +61,7 @@ Settings are stored in `.wiggum.toml` and read by the `run` command:
 
 **[learning] section:**
 - `enabled`: Enable learning diary capture (default: true)
-- `keep_diary`: Keep `.wiggum/session-diary.md` after consolidation (default: true)
+- `keep_diary`: Keep `.wiggum/session-diary.md` after consolidation (default: false)
 - `auto_consolidate`: Auto-consolidate diary into CLAUDE.md at session end (default: true)
 
 CLI flags override config file settings.

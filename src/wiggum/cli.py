@@ -49,6 +49,45 @@ from wiggum.tasks import (
 app = typer.Typer(help="Run iterative agent loops with task tracking")
 
 
+def _run_learning_consolidation(
+    agent_name: Optional[str], yolo: bool, keep_diary: bool
+) -> None:
+    """Consolidate learning diary into CLAUDE.md if content exists."""
+    from wiggum.learning import (
+        clear_diary,
+        consolidate_learnings,
+        get_diary_line_count,
+        has_diary_content,
+    )
+
+    if not has_diary_content():
+        return
+
+    # Confirm before consolidation (unless yolo mode)
+    if not yolo:
+        line_count = get_diary_line_count()
+        typer.echo(f"\nDiary has {line_count} line(s) to consolidate into CLAUDE.md")
+        if not typer.confirm("Proceed with consolidation?", default=True):
+            typer.echo("Skipped consolidation. Diary preserved.")
+            return
+
+    typer.echo("\nConsolidating learnings...")
+    success, reason = consolidate_learnings(agent_name, yolo)
+    if success:
+        typer.echo("Learnings added to CLAUDE.md")
+        if not keep_diary:
+            clear_diary()
+    else:
+        typer.echo(f"Warning: Failed to consolidate learnings: {reason}", err=True)
+
+
+def _ensure_learning_diary_dir() -> None:
+    """Ensure the learning diary directory exists (lazy import)."""
+    from wiggum.learning import ensure_diary_dir
+
+    ensure_diary_dir()
+
+
 @app.command()
 def run(
     prompt_file: Optional[Path] = typer.Option(
@@ -359,9 +398,7 @@ def run(
 
     # Ensure diary directory exists if learning is enabled
     if cfg.learning_enabled:
-        from wiggum.learning import ensure_diary_dir
-
-        ensure_diary_dir()
+        _ensure_learning_diary_dir()
 
     def check_stop_conditions() -> Optional[str]:
         """Check stop conditions and return exit message if should stop."""
@@ -451,21 +488,7 @@ def run(
 
     # Learning consolidation
     if cfg.learning_enabled and cfg.auto_consolidate:
-        from wiggum.learning import (
-            clear_diary,
-            consolidate_learnings,
-            has_diary_content,
-        )
-
-        if has_diary_content():
-            typer.echo("\nConsolidating learnings...")
-            success = consolidate_learnings(cfg.agent, cfg.yolo)
-            if success:
-                typer.echo("Learnings added to CLAUDE.md")
-                if not cfg.keep_diary:
-                    clear_diary()
-            else:
-                typer.echo("Warning: Failed to consolidate learnings", err=True)
+        _run_learning_consolidation(cfg.agent, cfg.yolo, cfg.keep_diary)
 
     # Show git summary and handle PR creation
     if in_git_repo and created_branch:
@@ -723,6 +746,15 @@ def init(
 
     prompt_path.write_text(prompt_content)
     typer.echo(f"Created {prompt_path} and {CONFIG_FILE}")
+
+    # Add .wiggum/ to .gitignore if exists (security: prevent diary commits)
+    gitignore_path = Path(".gitignore")
+    if gitignore_path.exists():
+        gitignore_content = gitignore_path.read_text()
+        if ".wiggum/" not in gitignore_content:
+            gitignore_path.write_text(gitignore_content.rstrip() + "\n.wiggum/\n")
+            typer.echo("Updated .gitignore with .wiggum/")
+
     typer.echo("\nRun the loop with: wiggum run")
 
 

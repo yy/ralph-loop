@@ -712,3 +712,42 @@ verbose = true
         assert result.exit_code == 0  # Warning, not error
         assert "max_iteration" in result.output.lower()
         assert "max_iterations" in result.output.lower()
+
+
+class TestMutuallyExclusiveHelper:
+    """Tests for check_mutually_exclusive helper function."""
+
+    def test_raises_when_both_true(self) -> None:
+        """Should raise ValueError when both flags are True."""
+        from wiggum.config import check_mutually_exclusive
+
+        with pytest.raises(ValueError, match="mutually exclusive"):
+            check_mutually_exclusive(True, "--foo", True, "--bar")
+
+    def test_no_error_when_first_true(self) -> None:
+        """Should not raise when only first flag is True."""
+        from wiggum.config import check_mutually_exclusive
+
+        check_mutually_exclusive(True, "--foo", False, "--bar")
+
+    def test_no_error_when_second_true(self) -> None:
+        """Should not raise when only second flag is True."""
+        from wiggum.config import check_mutually_exclusive
+
+        check_mutually_exclusive(False, "--foo", True, "--bar")
+
+    def test_no_error_when_both_false(self) -> None:
+        """Should not raise when both flags are False."""
+        from wiggum.config import check_mutually_exclusive
+
+        check_mutually_exclusive(False, "--foo", False, "--bar")
+
+    def test_error_message_includes_both_flag_names(self) -> None:
+        """Error message should include both flag names."""
+        from wiggum.config import check_mutually_exclusive
+
+        with pytest.raises(ValueError) as exc_info:
+            check_mutually_exclusive(True, "--alpha", True, "--beta")
+
+        assert "--alpha" in str(exc_info.value)
+        assert "--beta" in str(exc_info.value)

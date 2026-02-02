@@ -34,7 +34,7 @@ CONFIG_SCHEMA: dict[str, dict[str, tuple]] = {
     },
     "learning": {
         "enabled": (True, bool),
-        "keep_diary": (True, bool),
+        "keep_diary": (False, bool),  # Default false to reduce information leakage
         "auto_consolidate": (True, bool),
     },
 }
@@ -166,6 +166,26 @@ class ResolvedRunConfig:
     auto_consolidate: bool
 
 
+def check_mutually_exclusive(
+    flag1_value: bool, flag1_name: str, flag2_value: bool, flag2_name: str
+) -> None:
+    """Check that two flags are not both set.
+
+    Args:
+        flag1_value: Value of the first flag.
+        flag1_name: Name of the first flag (for error message).
+        flag2_value: Value of the second flag.
+        flag2_name: Name of the second flag (for error message).
+
+    Raises:
+        ValueError: If both flags are True.
+    """
+    if flag1_value and flag2_value:
+        raise ValueError(
+            f"{flag1_name} and {flag2_name} are mutually exclusive. Cannot use both."
+        )
+
+
 def resolve_run_config(
     *,
     yolo: bool,
@@ -269,14 +289,10 @@ def resolve_run_config(
             resolved_continue_session = True
 
     # Check mutually exclusive flags
-    if continue_session and reset_session:
-        raise ValueError(
-            "--continue and --reset are mutually exclusive. Cannot use both."
-        )
-    if keep_running and stop_when_done:
-        raise ValueError(
-            "--keep-running and --stop-when-done are mutually exclusive. Cannot use both."
-        )
+    check_mutually_exclusive(continue_session, "--continue", reset_session, "--reset")
+    check_mutually_exclusive(
+        keep_running, "--keep-running", stop_when_done, "--stop-when-done"
+    )
     # Resolve keep_running
     resolved_keep_running = keep_running
     if not keep_running and not stop_when_done:
@@ -295,30 +311,31 @@ def resolve_run_config(
         resolved_branch_prefix = git_config.get("branch_prefix", "wiggum")
 
     # Check mutually exclusive learning flags
-    if diary and no_diary:
-        raise ValueError(
-            "--diary and --no-diary are mutually exclusive. Cannot use both."
-        )
-    if keep_diary_flag and no_keep_diary:
-        raise ValueError(
-            "--keep-diary and --no-keep-diary are mutually exclusive. Cannot use both."
-        )
+    check_mutually_exclusive(diary, "--diary", no_diary, "--no-diary")
+    check_mutually_exclusive(
+        keep_diary_flag, "--keep-diary", no_keep_diary, "--no-keep-diary"
+    )
 
-    # Resolve learning config
+    # Resolve learning config (CLI flags override config file)
     learning_config = config.get("learning", {})
-    resolved_learning_enabled = learning_config.get("enabled", True)
+
     if diary:
         resolved_learning_enabled = True
     elif no_diary:
         resolved_learning_enabled = False
-    resolved_keep_diary = learning_config.get("keep_diary", True)
+    else:
+        resolved_learning_enabled = learning_config.get("enabled", True)
+
     if keep_diary_flag:
         resolved_keep_diary = True
     elif no_keep_diary:
         resolved_keep_diary = False
-    resolved_auto_consolidate = learning_config.get("auto_consolidate", True)
-    if no_consolidate:
-        resolved_auto_consolidate = False
+    else:
+        resolved_keep_diary = learning_config.get("keep_diary", False)
+
+    resolved_auto_consolidate = not no_consolidate and learning_config.get(
+        "auto_consolidate", True
+    )
 
     return ResolvedRunConfig(
         yolo=resolved_yolo,
