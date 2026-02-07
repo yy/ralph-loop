@@ -1321,6 +1321,50 @@ def clean(
 
 
 @app.command()
+def prune(
+    tasks_file: Path = tasks_file_option(
+        help_text="Tasks file to prune (default: TASKS.md)"
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Preview without removing",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Skip confirmation",
+    ),
+) -> None:
+    """Remove completed tasks from TASKS.md."""
+    task_list = get_all_tasks(tasks_file)
+
+    if task_list is None:
+        typer.echo(f"No tasks file found at {tasks_file}", err=True)
+        raise typer.Exit(1)
+
+    if not task_list.done:
+        typer.echo("No completed tasks to remove.")
+        return
+
+    count = len(task_list.done)
+
+    if dry_run:
+        typer.echo(f"Would remove {count} completed task(s):")
+        for task in task_list.done:
+            typer.echo(f"  - [x] {task}")
+        return
+
+    if not force:
+        if not typer.confirm(f"Remove {count} completed task(s)?", default=False):
+            typer.echo("Aborted.")
+            return
+
+    clear_done_tasks(tasks_file)
+    typer.echo(f"Removed {count} completed task(s)")
+
+
+@app.command()
 def changelog(
     version: Optional[str] = typer.Option(
         None,
