@@ -14,6 +14,17 @@ class TaskList:
     done: list[str] = field(default_factory=list)
 
 
+_TASK_BOX_PATTERN = re.compile(r"^- \[ \]", re.MULTILINE)
+_TASK_TODO_PATTERN = re.compile(r"^- \[ \] (.+)$", re.MULTILINE)
+_TASK_DONE_PATTERN = re.compile(r"^- \[[xX]\] (.+)$", re.MULTILINE)
+_TASK_ANY_PATTERN = re.compile(r"^- \[[x ]\] (.+)$", re.MULTILINE | re.IGNORECASE)
+
+
+def _find_tasks(content: str, pattern: re.Pattern[str]) -> list[str]:
+    """Extract task descriptions using a precompiled pattern."""
+    return [task.strip() for task in pattern.findall(content)]
+
+
 def tasks_remaining(tasks_file: Path = Path("TASKS.md")) -> bool:
     """Check if there are incomplete tasks in TASKS.md."""
     if not tasks_file.exists():
@@ -23,8 +34,7 @@ def tasks_remaining(tasks_file: Path = Path("TASKS.md")) -> bool:
     # Count unchecked boxes in Todo section
 
     # Find unchecked tasks: - [ ]
-    unchecked = re.findall(r"^- \[ \]", content, re.MULTILINE)
-    return len(unchecked) > 0
+    return _TASK_BOX_PATTERN.search(content) is not None
 
 
 def get_current_task(tasks_file: Path = Path("TASKS.md")) -> Optional[str]:
@@ -44,7 +54,7 @@ def get_current_task(tasks_file: Path = Path("TASKS.md")) -> Optional[str]:
         return None
 
     # Find first unchecked task: - [ ] task description
-    match = re.search(r"^- \[ \] (.+)$", content, re.MULTILINE)
+    match = _TASK_TODO_PATTERN.search(content)
     if match:
         return match.group(1).strip()
     return None
@@ -67,9 +77,9 @@ def get_existing_tasks_context(tasks_file: Path) -> str:
         return ""
 
     # Extract completed tasks
-    done_tasks = re.findall(r"^- \[[xX]\] (.+)$", content, re.MULTILINE)
+    done_tasks = _find_tasks(content, _TASK_DONE_PATTERN)
     # Extract pending/in-progress tasks (unchecked)
-    pending_tasks = re.findall(r"^- \[ \] (.+)$", content, re.MULTILINE)
+    pending_tasks = _find_tasks(content, _TASK_TODO_PATTERN)
 
     # If no tasks at all, return empty
     if not done_tasks and not pending_tasks:
@@ -111,11 +121,8 @@ def get_existing_task_descriptions(tasks_file: Path) -> set[str]:
 
     content = tasks_file.read_text()
     # Match both checked and unchecked tasks: - [x] or - [ ]
-    task_matches = re.findall(
-        r"^- \[[x ]\] (.+)$", content, re.MULTILINE | re.IGNORECASE
-    )
     # Normalize to lowercase for comparison
-    return {task.strip().lower() for task in task_matches}
+    return {task.lower() for task in _find_tasks(content, _TASK_ANY_PATTERN)}
 
 
 def add_task_to_file(tasks_file: Path, task_description: str) -> None:
@@ -194,11 +201,11 @@ def get_all_tasks(tasks_file: Path = Path("TASKS.md")) -> Optional[TaskList]:
     content = tasks_file.read_text()
 
     # Find unchecked tasks: - [ ]
-    todo = re.findall(r"^- \[ \] (.+)$", content, re.MULTILINE)
+    todo = _find_tasks(content, _TASK_TODO_PATTERN)
     # Find checked tasks: - [x] or - [X]
-    done = re.findall(r"^- \[[xX]\] (.+)$", content, re.MULTILINE)
+    done = _find_tasks(content, _TASK_DONE_PATTERN)
 
     return TaskList(
-        todo=[t.strip() for t in todo],
-        done=[t.strip() for t in done],
+        todo=todo,
+        done=done,
     )
