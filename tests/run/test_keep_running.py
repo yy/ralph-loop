@@ -1,7 +1,7 @@
 """Tests for --keep-running flag that continues loop even when tasks are complete.
 
 When tasks are all done but iterations remain, the agent can identify more tasks
-and add them to TASKS.md. This is controlled by --keep-running flag.
+and add them to TODO.md. This is controlled by --keep-running flag.
 """
 
 from pathlib import Path
@@ -21,7 +21,7 @@ class TestKeepRunningFlag:
         """By default, loop stops when all tasks are complete."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
         with patch("wiggum.agents.check_cli_available", return_value=True):
@@ -56,7 +56,7 @@ class TestKeepRunningFlag:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
         mock_agent = MagicMock()
@@ -95,7 +95,7 @@ class TestKeepRunningFlag:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         # Start with incomplete task
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
@@ -143,7 +143,7 @@ class TestKeepRunningFlag:
         """--stop-when-done explicitly stops when tasks complete (default behavior)."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
         with patch("wiggum.agents.check_cli_available", return_value=True):
@@ -246,7 +246,7 @@ class TestKeepRunningConfig:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
         config_file = tmp_path / ".wiggum.toml"
         config_file.write_text("[loop]\nkeep_running = true\n")
@@ -290,7 +290,7 @@ class TestKeepRunningConfig:
         """CLI flag --stop-when-done overrides config keep_running = true."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
         config_file = tmp_path / ".wiggum.toml"
         config_file.write_text("[loop]\nkeep_running = true\n")

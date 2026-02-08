@@ -23,10 +23,10 @@ For trivial tasks (string changes, renames, config tweaks), you may skip the sub
 
 1. Explore and understand the current state of the codebase
 2. Run the test suite to verify a "green light" state
-3. If tests fail: prioritize fixing them (add as blocking task in TASKS.md)
+3. If tests fail: prioritize fixing them (add as blocking task in TODO.md)
 
 ### Phase 1: Task Selection & Verification Design
-4. Read TASKS.md to see the current task list
+4. Read TODO.md to see the current task list
 5. Choose the most important task
 6. **If task references a spec file** (e.g., `see specs/feature.md`), read it first
 7. Define verification criteria: What tests or checks will prove this task is complete?
@@ -61,8 +61,11 @@ For trivial tasks (string changes, renames, config tweaks), you may skip the sub
 15. Skip this phase for clearly non-security-relevant changes
 
 ### Phase 5: Completion
-16. **Update docs**: Ensure documentation ({{doc_files}}) matches the implementation
-17. Update TASKS.md: mark task as `[x]` and move it to the `## Done` section
+16. **Update docs**: Ensure documentation ({{doc_files}}) reflects this change:
+    - If you added a feature or changed behavior, update README or relevant docs
+    - If you completed a notable fix or improvement, note it in the appropriate doc
+    - Completed tasks should leave a trace in the knowledge base, not just in the Done section
+17. Update TODO.md: mark task as `[x]` and move it to the `## Done` section
 
 ### Phase 6: Learning Capture (Optional)
 
@@ -96,6 +99,6 @@ If you can't describe what behavior would regress without the test, you don't ne
 ## Rules
 
 - Only work on ONE task per session
-- If blocked, update TASKS.md and work on the blocker first
+- If blocked, update TODO.md and work on the blocker first
 
 <!-- wiggum-template: 0.6.0 -->

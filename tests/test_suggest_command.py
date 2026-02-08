@@ -15,7 +15,7 @@ class TestSuggestCommand:
 
     def test_suggest_displays_found_tasks(self, tmp_path: Path) -> None:
         """Displays task suggestions from Claude."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
 
         mock_output = """```markdown
@@ -45,7 +45,7 @@ security_mode: conservative
 
     def test_suggest_adds_tasks_with_yes_flag(self, tmp_path: Path) -> None:
         """Adds all tasks without prompting when --yes is used."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
 
         mock_output = """```markdown
@@ -75,8 +75,8 @@ security_mode: yolo
         assert "- [ ] Task two" in content
 
     def test_suggest_skips_existing_tasks(self, tmp_path: Path) -> None:
-        """Does not add tasks that already exist in TASKS.md."""
-        tasks_file = tmp_path / "TASKS.md"
+        """Does not add tasks that already exist in TODO.md."""
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] Existing task\n")
 
         mock_output = """```markdown
@@ -109,7 +109,7 @@ security_mode: conservative
 
     def test_suggest_shows_count_of_new_tasks(self, tmp_path: Path) -> None:
         """Shows the number of new tasks found."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
 
         mock_output = """```markdown
@@ -139,7 +139,7 @@ security_mode: conservative
 
     def test_suggest_shows_added_count(self, tmp_path: Path) -> None:
         """Shows the count of tasks actually added."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
 
         mock_output = """```markdown
@@ -167,7 +167,7 @@ security_mode: conservative
 
     def test_suggest_all_tasks_exist_message(self, tmp_path: Path) -> None:
         """Shows message when all suggested tasks already exist."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Todo\n\n- [ ] Existing task\n- [ ] Another existing\n"
         )
@@ -198,7 +198,7 @@ security_mode: conservative
 
     def test_suggest_no_tasks_message(self, tmp_path: Path) -> None:
         """Shows message when no tasks are suggested."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
 
         mock_output = """```markdown
@@ -224,7 +224,7 @@ security_mode: conservative
 
     def test_suggest_handles_claude_failure(self, tmp_path: Path) -> None:
         """Handles case when Claude CLI is not available."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -242,7 +242,7 @@ security_mode: conservative
         assert "not found" in result.output.lower()
 
     def test_suggest_uses_default_tasks_file(self, tmp_path: Path) -> None:
-        """Uses TASKS.md in current directory by default."""
+        """Uses TODO.md in current directory by default."""
         mock_output = """```markdown
 ## Tasks
 
@@ -254,13 +254,13 @@ security_mode: conservative
 ```"""
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n")
             with patch(
                 "wiggum.runner.run_claude_for_planning",
                 return_value=(mock_output, None),
             ):
                 result = runner.invoke(app, ["suggest", "--yes"])
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
 
         assert result.exit_code == 0
         assert "- [ ] A task" in content
@@ -295,8 +295,8 @@ security_mode: conservative
         assert "- [ ] Custom task" in content
 
     def test_suggest_creates_tasks_file_if_missing(self, tmp_path: Path) -> None:
-        """Creates TASKS.md if it doesn't exist."""
-        tasks_file = tmp_path / "TASKS.md"
+        """Creates TODO.md if it doesn't exist."""
+        tasks_file = tmp_path / "TODO.md"
 
         mock_output = """```markdown
 ## Tasks
@@ -325,7 +325,7 @@ security_mode: conservative
 
     def test_suggest_case_insensitive_duplicate_check(self, tmp_path: Path) -> None:
         """Duplicate check is case-insensitive."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] Fix the BUG\n")
 
         mock_output = """```markdown
@@ -358,7 +358,7 @@ security_mode: conservative
 
     def test_suggest_interactive_mode_prompts(self, tmp_path: Path) -> None:
         """Interactive mode prompts for each task."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
 
         mock_output = """```markdown
@@ -392,7 +392,7 @@ security_mode: conservative
 
     def test_suggest_interactive_skip_all(self, tmp_path: Path) -> None:
         """Interactive mode can skip all tasks."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
 
         mock_output = """```markdown
@@ -425,7 +425,7 @@ security_mode: conservative
 
     def test_suggest_uses_readme_for_context(self, tmp_path: Path) -> None:
         """Uses README.md content for context if available."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n")
         readme_file = tmp_path / "README.md"
         readme_file.write_text("# My Project\n\nThis is a test project.")

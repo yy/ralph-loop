@@ -20,7 +20,7 @@ class TestLogFileOption:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
@@ -66,7 +66,7 @@ class TestLogFileOption:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
@@ -112,7 +112,7 @@ class TestLogFileContent:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
@@ -157,7 +157,7 @@ class TestLogFileContent:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
@@ -203,7 +203,7 @@ class TestLogFileContent:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 
@@ -253,7 +253,7 @@ class TestLogFileMultipleIterations:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n- [ ] task3\n"
         )
@@ -322,7 +322,7 @@ class TestLogFileMultipleIterations:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         log_file = tmp_path / "loop.log"
 

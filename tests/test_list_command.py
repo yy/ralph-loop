@@ -14,7 +14,7 @@ class TestListCommand:
 
     def test_list_shows_todo_tasks(self, tmp_path: Path) -> None:
         """Displays pending tasks."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Todo\n\n- [ ] First task\n- [ ] Second task\n"
         )
@@ -31,7 +31,7 @@ class TestListCommand:
 
     def test_list_shows_done_tasks(self, tmp_path: Path) -> None:
         """Displays completed tasks."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n- [x] Completed task\n\n## Todo\n\n"
         )
@@ -48,7 +48,7 @@ class TestListCommand:
 
     def test_list_shows_both_todo_and_done(self, tmp_path: Path) -> None:
         """Displays both pending and completed tasks."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n"
             "## Done\n\n"
@@ -71,7 +71,7 @@ class TestListCommand:
 
     def test_list_shows_none_when_no_todo_tasks(self, tmp_path: Path) -> None:
         """Shows '(none)' when there are no pending tasks."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n- [x] Completed task\n\n## Todo\n\n"
         )
@@ -86,9 +86,9 @@ class TestListCommand:
         assert "(none)" in result.output
 
     def test_list_default_file(self, tmp_path: Path) -> None:
-        """Uses TASKS.md in current directory by default."""
+        """Uses TODO.md in current directory by default."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] A task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] A task\n")
             result = runner.invoke(app, ["list"])
 
         assert result.exit_code == 0
@@ -121,7 +121,7 @@ class TestListCommand:
 
     def test_list_preserves_task_order(self, tmp_path: Path) -> None:
         """Tasks are displayed in the order they appear in the file."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Todo\n\n- [ ] First\n- [ ] Second\n- [ ] Third\n"
         )
@@ -140,7 +140,7 @@ class TestListCommand:
 
     def test_list_handles_uppercase_x_checkbox(self, tmp_path: Path) -> None:
         """Recognizes [X] as a completed task."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [X] Uppercase completed\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):

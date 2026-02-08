@@ -1,6 +1,6 @@
 """Tests for stop conditions in wiggum.
 
-The only stop condition is TASKS.md checkmarks (besides max iterations).
+The only stop condition is TODO.md checkmarks (besides max iterations).
 """
 
 from pathlib import Path
@@ -18,24 +18,24 @@ class TestTasksRemaining:
 
     def test_tasks_remaining_true_when_unchecked_tasks(self, tmp_path: Path) -> None:
         """Returns True when there are unchecked task boxes."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
         assert tasks_remaining(tasks_file) is True
 
     def test_tasks_remaining_false_when_all_complete(self, tmp_path: Path) -> None:
         """Returns False when all tasks are checked."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n")
         assert tasks_remaining(tasks_file) is False
 
     def test_tasks_remaining_true_when_file_missing(self, tmp_path: Path) -> None:
         """Returns True when tasks file doesn't exist (keep running)."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         assert tasks_remaining(tasks_file) is True
 
     def test_tasks_remaining_mixed_tasks(self, tmp_path: Path) -> None:
         """Returns True when some tasks are complete but others remain."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n- [x] done1\n\n## Todo\n\n- [ ] todo1\n"
         )
@@ -43,7 +43,7 @@ class TestTasksRemaining:
 
 
 class TestRunStopsOnTasksComplete:
-    """Tests that run command stops when all tasks in TASKS.md are complete."""
+    """Tests that run command stops when all tasks in TODO.md are complete."""
 
     def test_run_exits_immediately_when_all_tasks_complete(
         self, tmp_path: Path
@@ -51,7 +51,7 @@ class TestRunStopsOnTasksComplete:
         """The loop exits without running if all tasks are already complete."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n- [x] task2\n")
 
         with patch("wiggum.agents.check_cli_available", return_value=True):
@@ -83,7 +83,7 @@ class TestRunStopsOnTasksComplete:
         """The loop stops after an iteration if tasks become complete."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         call_count = 0
@@ -127,7 +127,7 @@ class TestRunStopsOnTasksComplete:
         """The loop keeps running while there are unchecked tasks."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
         call_count = 0

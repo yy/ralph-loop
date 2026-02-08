@@ -13,8 +13,8 @@ class TestAddCommand:
     """Tests for the `wiggum add` command."""
 
     def test_add_task_to_existing_file(self, tmp_path: Path) -> None:
-        """Adds a task to an existing TASKS.md file."""
-        tasks_file = tmp_path / "TASKS.md"
+        """Adds a task to an existing TODO.md file."""
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n- [ ] Existing task\n"
         )
@@ -31,8 +31,8 @@ class TestAddCommand:
         assert "- [ ] Existing task" in content
 
     def test_add_task_creates_file_if_missing(self, tmp_path: Path) -> None:
-        """Creates TASKS.md with proper structure if it doesn't exist."""
-        tasks_file = tmp_path / "TASKS.md"
+        """Creates TODO.md with proper structure if it doesn't exist."""
+        tasks_file = tmp_path / "TODO.md"
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(
@@ -48,22 +48,22 @@ class TestAddCommand:
         assert "- [ ] First task" in content
 
     def test_add_task_to_default_file(self, tmp_path: Path) -> None:
-        """Uses TASKS.md in current directory by default."""
-        tasks_file = tmp_path / "TASKS.md"
+        """Uses TODO.md in current directory by default."""
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Copy file into isolated filesystem
-            Path("TASKS.md").write_text(tasks_file.read_text())
+            Path("TODO.md").write_text(tasks_file.read_text())
             result = runner.invoke(app, ["add", "New task"])
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
 
         assert result.exit_code == 0
         assert "- [ ] New task" in content
 
     def test_add_task_appends_to_todo_section(self, tmp_path: Path) -> None:
         """Task is added to the Todo section, not elsewhere."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n"
             "## Done\n\n"
@@ -87,7 +87,7 @@ class TestAddCommand:
 
     def test_add_task_short_flag(self, tmp_path: Path) -> None:
         """Supports -f as shorthand for --tasks-file."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -102,7 +102,7 @@ class TestAddCommand:
 
     def test_add_empty_description_fails(self, tmp_path: Path) -> None:
         """Rejects empty task descriptions."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -116,7 +116,7 @@ class TestAddCommand:
 
     def test_add_whitespace_only_description_fails(self, tmp_path: Path) -> None:
         """Rejects whitespace-only task descriptions."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -129,7 +129,7 @@ class TestAddCommand:
 
     def test_add_shows_confirmation_message(self, tmp_path: Path) -> None:
         """Shows confirmation message after adding task."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -143,7 +143,7 @@ class TestAddCommand:
 
     def test_add_multiple_tasks_sequentially(self, tmp_path: Path) -> None:
         """Can add multiple tasks one after another."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -172,7 +172,7 @@ class TestAddCommand:
 
     def test_add_handles_file_without_todo_section(self, tmp_path: Path) -> None:
         """Handles files that exist but don't have a Todo section."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\nSome random content\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -197,7 +197,7 @@ class TestAddCommand:
             "## Todo\n\n"
             "- [ ] Existing todo\n"
         )
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(original_content)
 
         with runner.isolated_filesystem(temp_dir=tmp_path):

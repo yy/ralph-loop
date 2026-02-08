@@ -31,7 +31,7 @@ class TestPromptOptionRemoval:
         """When LOOP-PROMPT.md exists, run command reads from it."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("This is the loop prompt content")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] all done\n")
 
         with patch("wiggum.agents.check_cli_available", return_value=True):
@@ -62,7 +62,7 @@ class TestPromptOptionRemoval:
         """The -f/--file option allows specifying a custom prompt file."""
         custom_prompt = tmp_path / "custom-prompt.md"
         custom_prompt.write_text("Custom prompt content")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] done\n")
 
         with patch("wiggum.agents.check_cli_available", return_value=True):
@@ -133,7 +133,7 @@ class TestPromptFileDefault:
         # Create LOOP-PROMPT.md in tmp_path
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("Default prompt content")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] done\n")
 
         original_dir = os.getcwd()

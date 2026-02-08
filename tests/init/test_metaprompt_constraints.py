@@ -164,7 +164,7 @@ class TestInitUsesConstraintSuggestions:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text(
@@ -192,7 +192,7 @@ security_mode: yolo
                 return_value=(claude_output, None),
             ):
                 # Accept suggestions (y), git (n) - yolo mode is auto-applied from constraints
-                result = runner.invoke(app, ["init"], input="y\nn\n")
+                result = runner.invoke(app, ["init", "--suggest"], input="y\nn\n")
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), f"Config not created. Output: {result.output}"
@@ -206,7 +206,7 @@ security_mode: yolo
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text(
@@ -234,7 +234,7 @@ allow_paths: src/,tests/
                 return_value=(claude_output, None),
             ):
                 # Accept suggestions (y), git (n)
-                result = runner.invoke(app, ["init"], input="y\nn\n")
+                result = runner.invoke(app, ["init", "--suggest"], input="y\nn\n")
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), f"Config not created. Output: {result.output}"
@@ -249,7 +249,7 @@ allow_paths: src/,tests/
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text(
@@ -276,7 +276,7 @@ security_mode: conservative
                 return_value=(claude_output, None),
             ):
                 # Accept suggestions (y), git (n)
-                result = runner.invoke(app, ["init"], input="y\nn\n")
+                result = runner.invoke(app, ["init", "--suggest"], input="y\nn\n")
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), f"Config not created. Output: {result.output}"
@@ -291,7 +291,7 @@ security_mode: conservative
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text(
@@ -319,7 +319,7 @@ internet_access: true
                 return_value=(claude_output, None),
             ):
                 # Accept suggestions (y), git (n)
-                result = runner.invoke(app, ["init"], input="y\nn\n")
+                result = runner.invoke(app, ["init", "--suggest"], input="y\nn\n")
 
             # Should show security mode in suggestions
             assert (
@@ -335,7 +335,7 @@ internet_access: true
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text(
@@ -359,7 +359,7 @@ Simple project
                 return_value=(claude_output, None),
             ):
                 # Accept suggestions for tasks (y), manually choose conservative (1), git (n)
-                result = runner.invoke(app, ["init"], input="y\n1\nn\n")
+                result = runner.invoke(app, ["init", "--suggest"], input="y\n1\nn\n")
 
             # Should still have created config with manual selection
             config_file = Path(".wiggum.toml")

@@ -16,7 +16,7 @@ class TestCleanCommand:
         """Removes LOOP-PROMPT.md and .wiggum.toml by default."""
         loop_prompt = tmp_path / "LOOP-PROMPT.md"
         config = tmp_path / ".wiggum.toml"
-        tasks = tmp_path / "TASKS.md"
+        tasks = tmp_path / "TODO.md"
 
         loop_prompt.write_text("# Prompt\n")
         config.write_text("[loop]\n")
@@ -25,103 +25,103 @@ class TestCleanCommand:
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text(loop_prompt.read_text())
             Path(".wiggum.toml").write_text(config.read_text())
-            Path("TASKS.md").write_text(tasks.read_text())
+            Path("TODO.md").write_text(tasks.read_text())
 
             result = runner.invoke(app, ["clean", "--force", "--keep-tasks"])
 
             assert not Path("LOOP-PROMPT.md").exists()
             assert not Path(".wiggum.toml").exists()
-            assert Path("TASKS.md").exists()
+            assert Path("TODO.md").exists()
 
         assert result.exit_code == 0
         assert "Removed" in result.output
 
     def test_clean_keeps_tasks_by_default(self, tmp_path: Path) -> None:
-        """TASKS.md is kept by default when using --force."""
+        """TODO.md is kept by default when using --force."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("# Prompt\n")
             Path(".wiggum.toml").write_text("[loop]\n")
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             result = runner.invoke(app, ["clean", "--force"])
 
             assert not Path("LOOP-PROMPT.md").exists()
             assert not Path(".wiggum.toml").exists()
-            # Without --keep-tasks or --all, --force keeps TASKS.md
-            assert Path("TASKS.md").exists()
+            # Without --keep-tasks or --all, --force keeps TODO.md
+            assert Path("TODO.md").exists()
 
         assert result.exit_code == 0
-        assert "Kept TASKS.md" in result.output
+        assert "Kept TODO.md" in result.output
 
     def test_clean_all_removes_tasks_too(self, tmp_path: Path) -> None:
-        """--all flag removes TASKS.md as well."""
+        """--all flag removes TODO.md as well."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("# Prompt\n")
             Path(".wiggum.toml").write_text("[loop]\n")
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             result = runner.invoke(app, ["clean", "--all", "--force"])
 
             assert not Path("LOOP-PROMPT.md").exists()
             assert not Path(".wiggum.toml").exists()
-            assert not Path("TASKS.md").exists()
+            assert not Path("TODO.md").exists()
 
         assert result.exit_code == 0
 
     def test_clean_keep_tasks_explicit(self, tmp_path: Path) -> None:
-        """--keep-tasks explicitly keeps TASKS.md."""
+        """--keep-tasks explicitly keeps TODO.md."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("# Prompt\n")
             Path(".wiggum.toml").write_text("[loop]\n")
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             result = runner.invoke(app, ["clean", "--keep-tasks", "--force"])
 
             assert not Path("LOOP-PROMPT.md").exists()
             assert not Path(".wiggum.toml").exists()
-            assert Path("TASKS.md").exists()
+            assert Path("TODO.md").exists()
 
         assert result.exit_code == 0
-        assert "Kept TASKS.md" in result.output
+        assert "Kept TODO.md" in result.output
 
     def test_clean_dry_run_shows_what_would_be_removed(self, tmp_path: Path) -> None:
         """--dry-run shows files without actually removing them."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("# Prompt\n")
             Path(".wiggum.toml").write_text("[loop]\n")
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             result = runner.invoke(app, ["clean", "--dry-run"])
 
             # Files should still exist
             assert Path("LOOP-PROMPT.md").exists()
             assert Path(".wiggum.toml").exists()
-            assert Path("TASKS.md").exists()
+            assert Path("TODO.md").exists()
 
         assert result.exit_code == 0
         assert "Would remove" in result.output
         assert "LOOP-PROMPT.md" in result.output
         assert ".wiggum.toml" in result.output
         assert "Would keep" in result.output
-        assert "TASKS.md" in result.output
+        assert "TODO.md" in result.output
 
     def test_clean_dry_run_all_shows_tasks_removal(self, tmp_path: Path) -> None:
-        """--dry-run --all shows TASKS.md would be removed."""
+        """--dry-run --all shows TODO.md would be removed."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("# Prompt\n")
             Path(".wiggum.toml").write_text("[loop]\n")
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             result = runner.invoke(app, ["clean", "--dry-run", "--all"])
 
             # Files should still exist
             assert Path("LOOP-PROMPT.md").exists()
             assert Path(".wiggum.toml").exists()
-            assert Path("TASKS.md").exists()
+            assert Path("TODO.md").exists()
 
         assert result.exit_code == 0
         assert "Would remove" in result.output
-        assert "TASKS.md" in result.output
+        assert "TODO.md" in result.output
 
     def test_clean_no_files_exist(self, tmp_path: Path) -> None:
         """Shows message when no wiggum files are found."""
@@ -135,7 +135,7 @@ class TestCleanCommand:
         """Only removes files that exist."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path(".wiggum.toml").write_text("[loop]\n")
-            # No LOOP-PROMPT.md or TASKS.md
+            # No LOOP-PROMPT.md or TODO.md
 
             result = runner.invoke(app, ["clean", "--force"])
 
@@ -176,35 +176,35 @@ class TestCleanCommand:
         assert "Removed" in result.output
 
     def test_clean_prompts_about_tasks_when_present(self, tmp_path: Path) -> None:
-        """Asks about TASKS.md when it exists and --keep-tasks/--all not specified."""
+        """Asks about TODO.md when it exists and --keep-tasks/--all not specified."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("# Prompt\n")
             Path(".wiggum.toml").write_text("[loop]\n")
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             # Answer 'n' to tasks question, 'y' to removal
             result = runner.invoke(app, ["clean"], input="n\ny\n")
 
             assert not Path("LOOP-PROMPT.md").exists()
             assert not Path(".wiggum.toml").exists()
-            assert Path("TASKS.md").exists()
+            assert Path("TODO.md").exists()
 
         assert result.exit_code == 0
-        assert "TASKS.md contains your task list" in result.output
+        assert "TODO.md contains your task list" in result.output
 
     def test_clean_prompts_tasks_answer_yes(self, tmp_path: Path) -> None:
-        """TASKS.md is removed when user confirms."""
+        """TODO.md is removed when user confirms."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("# Prompt\n")
             Path(".wiggum.toml").write_text("[loop]\n")
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             # Answer 'y' to tasks question, 'y' to removal
             result = runner.invoke(app, ["clean"], input="y\ny\n")
 
             assert not Path("LOOP-PROMPT.md").exists()
             assert not Path(".wiggum.toml").exists()
-            assert not Path("TASKS.md").exists()
+            assert not Path("TODO.md").exists()
 
         assert result.exit_code == 0
 
@@ -253,9 +253,9 @@ class TestCleanCommand:
         assert result.exit_code == 0
 
     def test_clean_only_tasks_exist(self, tmp_path: Path) -> None:
-        """When only TASKS.md exists, shows appropriate message."""
+        """When only TODO.md exists, shows appropriate message."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             result = runner.invoke(app, ["clean", "--keep-tasks"])
 
@@ -267,14 +267,14 @@ class TestCleanCommand:
         )
 
     def test_clean_only_tasks_with_all(self, tmp_path: Path) -> None:
-        """When only TASKS.md exists and --all is used, removes it."""
+        """When only TODO.md exists and --all is used, removes it."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text("# Tasks\n")
+            Path("TODO.md").write_text("# Tasks\n")
 
             result = runner.invoke(app, ["clean", "--all", "--force"])
 
-            assert not Path("TASKS.md").exists()
+            assert not Path("TODO.md").exists()
 
         assert result.exit_code == 0
         assert "Removed" in result.output
-        assert "TASKS.md" in result.output
+        assert "TODO.md" in result.output

@@ -105,10 +105,10 @@ def merge_config_with_defaults(existing: dict) -> dict:
 
 
 def tasks_file_needs_upgrade(content: str) -> bool:
-    """Check if TASKS.md needs structural upgrade.
+    """Check if TODO.md needs structural upgrade.
 
     Args:
-        content: Current TASKS.md content.
+        content: Current TODO.md content.
 
     Returns:
         True if file is missing required sections.
@@ -121,10 +121,10 @@ def tasks_file_needs_upgrade(content: str) -> bool:
 
 
 def add_missing_task_sections(content: str) -> str:
-    """Add missing sections to TASKS.md.
+    """Add missing sections to TODO.md.
 
     Args:
-        content: Current TASKS.md content.
+        content: Current TODO.md content.
 
     Returns:
         Content with missing sections added.
@@ -169,6 +169,50 @@ def add_missing_task_sections(content: str) -> str:
         return "\n".join(result)
 
     return "\n".join(new_lines)
+
+
+def needs_tasks_rename() -> bool:
+    """Check if TASKS.md exists without TODO.md (needs migration)."""
+    return Path("TASKS.md").exists() and not Path("TODO.md").exists()
+
+
+def migrate_tasks_to_todo() -> list[str]:
+    """Migrate TASKS.md → TODO.md and clean up related files.
+
+    Returns:
+        List of actions taken.
+    """
+    actions = []
+    tasks_path = Path("TASKS.md")
+    todo_path = Path("TODO.md")
+
+    if tasks_path.exists() and not todo_path.exists():
+        tasks_path.rename(todo_path)
+        actions.append("Renamed TASKS.md → TODO.md")
+
+    # Clean up .gitignore: remove /TASKS.md and /DONE.md entries
+    gitignore_path = Path(".gitignore")
+    if gitignore_path.exists():
+        content = gitignore_path.read_text()
+        new_content = content
+        for entry in ["/TASKS.md\n", "/DONE.md\n"]:
+            new_content = new_content.replace(entry, "")
+        if new_content != content:
+            gitignore_path.write_text(new_content)
+            actions.append("Removed /TASKS.md and /DONE.md from .gitignore")
+
+    # Update .wiggum.toml if it has tasks_file = "TASKS.md"
+    config_path = Path(".wiggum.toml")
+    if config_path.exists():
+        config_content = config_path.read_text()
+        if 'tasks_file = "TASKS.md"' in config_content:
+            new_config = config_content.replace(
+                'tasks_file = "TASKS.md"', 'tasks_file = "TODO.md"'
+            )
+            config_path.write_text(new_config)
+            actions.append('Updated .wiggum.toml: tasks_file = "TODO.md"')
+
+    return actions
 
 
 def get_next_backup_path(path: Path) -> Path:

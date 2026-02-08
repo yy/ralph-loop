@@ -22,7 +22,7 @@ class TestContinueFlag:
         # Setup
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
         configs_received = []
@@ -81,7 +81,7 @@ class TestContinueFlag:
         """The first iteration never has -c flag even with --continue."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_subprocess_run(cmd, **kwargs):
@@ -126,7 +126,7 @@ class TestResetFlag:
         """By default (without --continue), claude is never called with -c flag."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
         call_count = 0
@@ -179,7 +179,7 @@ class TestResetFlag:
         """The --reset flag explicitly ensures fresh sessions (same as default)."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_subprocess_run(cmd, **kwargs):
@@ -223,7 +223,7 @@ class TestContinueAndResetMutualExclusion:
         """Using both --continue and --reset shows an error."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         with patch("wiggum.agents.check_cli_available", return_value=True):

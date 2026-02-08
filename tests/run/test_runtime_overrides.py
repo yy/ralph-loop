@@ -14,10 +14,10 @@ class TestDefaultStopCondition:
     """Tests for the default stop condition behavior (tasks-based)."""
 
     def test_default_stop_condition_is_tasks(self, tmp_path: Path) -> None:
-        """Default behavior is to check tasks in TASKS.md for completion."""
+        """Default behavior is to check tasks in TODO.md for completion."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         # All tasks complete
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 
@@ -51,7 +51,7 @@ class TestDefaultStopCondition:
         """--tasks flag specifies a custom tasks file for stop condition."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        custom_tasks = tmp_path / "CUSTOM_TASKS.md"
+        custom_tasks = tmp_path / "CUSTOM_TODO.md"
         # All tasks complete in custom file
         custom_tasks.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
 

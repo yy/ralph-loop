@@ -24,7 +24,7 @@ class TestCliUsesAgentAbstraction:
         """The run command should use get_agent() to obtain the agent."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         mock_agent = MagicMock()
@@ -63,7 +63,7 @@ class TestCliUsesAgentAbstraction:
         """The run command should call agent.run() with AgentConfig."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         mock_agent = MagicMock()
@@ -105,7 +105,7 @@ class TestCliUsesAgentAbstraction:
         """The AgentConfig should have the correct prompt."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("my special prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         mock_agent = MagicMock()
@@ -144,7 +144,7 @@ class TestCliUsesAgentAbstraction:
         """The AgentConfig should have yolo setting from CLI."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         mock_agent = MagicMock()
@@ -185,7 +185,7 @@ class TestCliUsesAgentAbstraction:
         """The AgentConfig should have allow_paths setting from CLI."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         mock_agent = MagicMock()
@@ -229,7 +229,7 @@ class TestCliUsesAgentAbstraction:
         """With --continue, continue_session should be True after first iteration."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
         mock_agent = MagicMock()

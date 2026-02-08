@@ -17,7 +17,7 @@ class TestVerboseFlag:
         """-v short flag should enable progress display (same as --show-progress)."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         git_was_called = False
@@ -59,7 +59,7 @@ class TestVerboseFlag:
         """--verbose long flag should enable progress display (same as --show-progress)."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         git_was_called = False
@@ -127,7 +127,7 @@ class TestShowProgressFlag:
         """With --show-progress, git status is shown after each iteration."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_subprocess_run(cmd, **kwargs):
@@ -173,7 +173,7 @@ class TestShowProgressFlag:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_agent_run(config):
@@ -214,7 +214,7 @@ class TestProgressOutput:
         """Modified files (M) from git status are displayed."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_subprocess_run(cmd, **kwargs):
@@ -254,7 +254,7 @@ class TestProgressOutput:
         """New/untracked files (??) from git status are displayed."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_subprocess_run(cmd, **kwargs):
@@ -292,7 +292,7 @@ class TestProgressOutput:
         """Deleted files (D) from git status are displayed."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_subprocess_run(cmd, **kwargs):
@@ -330,7 +330,7 @@ class TestProgressOutput:
         """When no files changed, an appropriate message is shown."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_subprocess_run(cmd, **kwargs):
@@ -376,7 +376,7 @@ class TestNonGitDirectory:
         with runner.isolated_filesystem(temp_dir=tmp_path):
             prompt_file = Path("LOOP-PROMPT.md")
             prompt_file.write_text("test prompt")
-            tasks_file = Path("TASKS.md")
+            tasks_file = Path("TODO.md")
             tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
             def mock_agent_run(config):
@@ -417,7 +417,7 @@ class TestProgressMultipleIterations:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n- [ ] task2\n")
 
         call_count = 0
@@ -495,7 +495,7 @@ class TestTimestampedDebugOutput:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_agent_run(config):
@@ -541,7 +541,7 @@ class TestTimestampedDebugOutput:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_agent_run(config):
@@ -582,7 +582,7 @@ class TestTimestampedDebugOutput:
 
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         def mock_agent_run(config):

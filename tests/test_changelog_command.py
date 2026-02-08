@@ -258,7 +258,7 @@ class TestChangelogCommand:
 
     def test_generates_changelog_from_done_tasks(self, tmp_path: Path) -> None:
         """Generates changelog from completed tasks."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n"
             "## Done\n\n"
@@ -291,7 +291,7 @@ class TestChangelogCommand:
 
     def test_dry_run_does_not_write(self, tmp_path: Path) -> None:
         """--dry-run shows preview without writing file."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] Add feature\n\n## Todo\n\n")
         output_file = tmp_path / "CHANGELOG.md"
 
@@ -315,7 +315,7 @@ class TestChangelogCommand:
 
     def test_version_flag(self, tmp_path: Path) -> None:
         """--version creates versioned section."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] Add feature\n\n## Todo\n\n")
         output_file = tmp_path / "CHANGELOG.md"
 
@@ -341,7 +341,7 @@ class TestChangelogCommand:
 
     def test_append_mode(self, tmp_path: Path) -> None:
         """--append adds to existing changelog."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n- [x] Add new feature\n\n## Todo\n\n"
         )
@@ -373,7 +373,7 @@ class TestChangelogCommand:
 
     def test_clear_done_flag(self, tmp_path: Path) -> None:
         """--clear-done removes tasks from Done section."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n"
             "## Done\n\n"
@@ -406,7 +406,7 @@ class TestChangelogCommand:
 
     def test_no_done_tasks_exits_cleanly(self, tmp_path: Path) -> None:
         """Exits with message when no completed tasks."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n## Todo\n\n- [ ] Task\n")
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -431,7 +431,7 @@ class TestChangelogCommand:
 
     def test_shows_task_summary(self, tmp_path: Path) -> None:
         """Shows summary of categorized tasks."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n"
             "## Done\n\n"
@@ -462,7 +462,7 @@ class TestChangelogCommand:
 
     def test_prompts_before_overwrite(self, tmp_path: Path) -> None:
         """Prompts for confirmation before overwriting existing file."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] Add feature\n\n## Todo\n\n")
         output_file = tmp_path / "CHANGELOG.md"
         output_file.write_text("# Existing changelog\n")
@@ -487,9 +487,9 @@ class TestChangelogCommand:
         assert "Existing changelog" in output_file.read_text()
 
     def test_default_files(self, tmp_path: Path) -> None:
-        """Uses TASKS.md and CHANGELOG.md by default."""
+        """Uses TODO.md and CHANGELOG.md by default."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n- [x] Add feature\n\n## Todo\n\n"
             )
             result = runner.invoke(app, ["changelog", "--force"])
@@ -509,7 +509,7 @@ class TestClearDoneTasks:
 
     def test_empty_done_section_preserved(self, tmp_path: Path) -> None:
         """Preserves the Done header when section is already empty."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         original = "# Tasks\n\n## Done\n\n## Todo\n\n- [ ] Task\n"
         tasks_file.write_text(original)
 
@@ -522,7 +522,7 @@ class TestClearDoneTasks:
 
     def test_clears_lowercase_x_checkbox(self, tmp_path: Path) -> None:
         """Clears tasks with lowercase [x] checkbox."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n- [x] Completed task\n\n## Todo\n\n"
         )
@@ -535,7 +535,7 @@ class TestClearDoneTasks:
 
     def test_clears_uppercase_x_checkbox(self, tmp_path: Path) -> None:
         """Clears tasks with uppercase [X] checkbox."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n- [X] Completed task\n\n## Todo\n\n"
         )
@@ -548,7 +548,7 @@ class TestClearDoneTasks:
 
     def test_clears_multiple_tasks(self, tmp_path: Path) -> None:
         """Clears all completed tasks from Done section."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n"
             "## Done\n\n"
@@ -568,7 +568,7 @@ class TestClearDoneTasks:
 
     def test_preserves_todo_section(self, tmp_path: Path) -> None:
         """Preserves tasks in the Todo section."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n- [x] Completed\n\n## Todo\n\n- [ ] Pending task\n"
         )
@@ -581,7 +581,7 @@ class TestClearDoneTasks:
 
     def test_no_done_section_unchanged(self, tmp_path: Path) -> None:
         """File without Done section remains unchanged."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         original = "# Tasks\n\n## Todo\n\n- [ ] Task\n"
         tasks_file.write_text(original)
 
@@ -591,7 +591,7 @@ class TestClearDoneTasks:
 
     def test_done_section_at_end_of_file(self, tmp_path: Path) -> None:
         """Handles Done section at end of file without trailing newline."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Todo\n\n- [ ] Task\n\n## Done\n\n- [x] Completed"
         )
@@ -605,7 +605,7 @@ class TestClearDoneTasks:
 
     def test_preserves_content_after_done_section(self, tmp_path: Path) -> None:
         """Preserves sections that appear after the Done section."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Done\n\n- [x] Completed\n\n## Notes\n\nSome notes here.\n"
         )

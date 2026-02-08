@@ -17,7 +17,7 @@ class TestGitSafetyDryRun:
         """Shows git safety is enabled by default."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             result = runner.invoke(app, ["run", "--dry-run"])
 
         assert result.exit_code == 0
@@ -29,7 +29,7 @@ class TestGitSafetyDryRun:
         """Shows git safety disabled when --no-branch is used."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             result = runner.invoke(app, ["run", "--dry-run", "--no-branch"])
 
         assert result.exit_code == 0
@@ -39,7 +39,7 @@ class TestGitSafetyDryRun:
         """Shows git safety disabled when --force is used."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             result = runner.invoke(app, ["run", "--dry-run", "--force"])
 
         assert result.exit_code == 0
@@ -49,7 +49,7 @@ class TestGitSafetyDryRun:
         """Shows PR creation when --pr flag is used."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             result = runner.invoke(app, ["run", "--dry-run", "--pr"])
 
         assert result.exit_code == 0
@@ -59,7 +59,7 @@ class TestGitSafetyDryRun:
         """Shows branch prefix in dry run."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             result = runner.invoke(
                 app, ["run", "--dry-run", "--branch-prefix", "myprefix"]
             )
@@ -71,7 +71,7 @@ class TestGitSafetyDryRun:
         """Uses 'wiggum' as default branch prefix."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             result = runner.invoke(app, ["run", "--dry-run"])
 
         assert result.exit_code == 0
@@ -86,7 +86,7 @@ class TestGitSafetyConfig:
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path(".wiggum.toml").write_text("[git]\nauto_pr = true")
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             result = runner.invoke(app, ["run", "--dry-run"])
 
         assert result.exit_code == 0
@@ -97,7 +97,7 @@ class TestGitSafetyConfig:
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path(".wiggum.toml").write_text('[git]\nbranch_prefix = "feature"')
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             result = runner.invoke(app, ["run", "--dry-run"])
 
         assert result.exit_code == 0
@@ -111,7 +111,7 @@ class TestGitSafetyNonGitRepo:
         """Non-git repo asks for confirmation to proceed."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
             # Answer 'n' to the confirmation prompt
             with patch("wiggum.agents.check_cli_available", return_value=True):
                 result = runner.invoke(app, ["run", "-n", "1"], input="n\n")
@@ -123,7 +123,7 @@ class TestGitSafetyNonGitRepo:
         """--force skips the confirmation prompt in non-git repos."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Done\n\n- [x] Done\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Done\n\n- [x] Done\n")
 
             with patch("wiggum.agents.check_cli_available", return_value=True):
                 with patch("wiggum.cli.get_agent") as mock_get_agent:
@@ -144,7 +144,7 @@ class TestGitSafetyPrRequiresGitRepo:
         """--pr flag requires a git repository."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
 
             with patch("wiggum.agents.check_cli_available", return_value=True):
                 # Answer 'y' to proceed without git, but --pr should fail

@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 wiggum is a Python package for setting up and running "Ralph Wiggum loops" for Claude Code and similar AI agent tools. The package provides:
 
 1. **Setup Assistant**: An interactive helper that guides users through configuring loop parameters including prompts, conditions, and security settings
-2. **Loop Runner**: Executes loops with configurable parameters like iteration count (stops when all tasks in TASKS.md are complete)
+2. **Loop Runner**: Executes loops with configurable parameters like iteration count (stops when all tasks in TODO.md are complete)
 
 ## Development
 
@@ -43,14 +43,14 @@ See `docs/` for deeper reference material:
 ## Architecture
 
 ### CLI Commands
-- `wiggum init`: Interactive setup that creates `LOOP-PROMPT.md`, `TASKS.md`, and `.wiggum.toml`. Claude analyzes the codebase and suggests both tasks and security constraints. If `TASKS.md` already exists, new tasks are merged (without duplicates) rather than overwriting.
-- `wiggum run`: Executes the loop, reading prompt from file and iterating until all tasks in TASKS.md are complete (or max iterations reached). Use `--keep-running` to continue even when tasks are complete (agent can add new tasks). Use `--identify-tasks` to analyze the codebase and populate TASKS.md with refactoring/cleanup tasks without running the loop. Use `--git` to enable git workflow (fetch/merge main, create branch, create PR at end).
-- `wiggum add`: Adds tasks to `TASKS.md`
-- `wiggum list`: Lists all tasks from `TASKS.md` grouped by status (todo/done)
+- `wiggum init`: Interactive setup that creates `LOOP-PROMPT.md`, `TODO.md`, and `.wiggum.toml`. By default, runs lean (no Claude call) — prompts for manual task entry, security mode, and git workflow. Use `--suggest`/`-s` to enable Claude-assisted task and constraint discovery. If `TODO.md` already exists, new tasks are merged (without duplicates) rather than overwriting.
+- `wiggum run`: Executes the loop, reading prompt from file and iterating until all tasks in TODO.md are complete (or max iterations reached). Use `--keep-running` to continue even when tasks are complete (agent can add new tasks). Use `--identify-tasks` to analyze the codebase and populate TODO.md with refactoring/cleanup tasks without running the loop. Use `--git` to enable git workflow (fetch/merge main, create branch, create PR at end).
+- `wiggum add`: Adds tasks to `TODO.md`
+- `wiggum list`: Lists all tasks from `TODO.md` grouped by status (todo/done)
 - `wiggum suggest`: Interactively discovers and suggests tasks using Claude's planning mode. Use `-y`/`--yes` to accept all suggestions without prompting.
 - `wiggum spec <name>`: Creates a new spec file from template in `specs/` directory. Tasks can reference specs like: `- [ ] Implement feature (see specs/feature.md)`
-- `wiggum changelog`: Generates CHANGELOG.md from completed tasks in TASKS.md. Categorizes tasks by prefix (Add→Added, Fix→Fixed, Update→Changed, Remove→Removed). Flags: `--version/-v` for version string, `--dry-run` to preview, `--append` to add to existing file, `--clear-done` to clear Done section after generating.
-- `wiggum prune`: Removes completed tasks from TASKS.md. Flags: `--dry-run` to preview, `--force` to skip confirmation, `-f` for custom tasks file.
+- `wiggum changelog`: Generates CHANGELOG.md from completed tasks in TODO.md. Categorizes tasks by prefix (Add→Added, Fix→Fixed, Update→Changed, Remove→Removed). Flags: `--version/-v` for version string, `--dry-run` to preview, `--append` to add to existing file, `--clear-done` to clear Done section after generating.
+- `wiggum prune`: Removes completed tasks from TODO.md. Flags: `--dry-run` to preview, `--force` to skip confirmation, `-f` for custom tasks file.
 
 ### Configuration
 Settings are stored in `.wiggum.toml` and read by the `run` command:

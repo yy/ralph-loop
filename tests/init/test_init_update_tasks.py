@@ -1,4 +1,4 @@
-"""Tests for init command merging tasks when TASKS.md exists."""
+"""Tests for init command merging tasks when TODO.md exists."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -11,17 +11,17 @@ runner = CliRunner()
 
 
 class TestInitMergesTasks:
-    """Tests for init command updating TASKS.md when it already exists."""
+    """Tests for init command updating TODO.md when it already exists."""
 
     def test_init_merges_tasks_when_tasks_file_exists(self, tmp_path: Path) -> None:
-        """Init adds new tasks to existing TASKS.md instead of failing."""
+        """Init adds new tasks to existing TODO.md instead of failing."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create templates
             Path("templates").mkdir()
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Tasks\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
@@ -29,8 +29,8 @@ class TestInitMergesTasks:
             # Create README so goal is inferred
             Path("README.md").write_text("# Test Project\n\nThis is a test.")
 
-            # Create existing TASKS.md with some tasks
-            Path("TASKS.md").write_text(
+            # Create existing TODO.md with some tasks
+            Path("TODO.md").write_text(
                 "# Tasks\n\n"
                 "## Done\n\n"
                 "- [x] Previously completed task\n\n"
@@ -57,7 +57,7 @@ Test goal
                 # Accept Claude's suggestions, conservative security, git (n)
                 result = runner.invoke(
                     app,
-                    ["init"],
+                    ["init", "--suggest"],
                     input="y\n1\nn\n",
                 )
 
@@ -65,7 +65,7 @@ Test goal
             assert result.exit_code == 0, f"Expected success. Output: {result.output}"
 
             # Existing tasks should be preserved
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "- [x] Previously completed task" in content
             assert "- [ ] Existing todo task" in content
 
@@ -74,14 +74,14 @@ Test goal
             assert "- [ ] Another new task" in content
 
     def test_init_does_not_duplicate_existing_tasks(self, tmp_path: Path) -> None:
-        """Init does not add tasks that already exist in TASKS.md."""
+        """Init does not add tasks that already exist in TODO.md."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create templates
             Path("templates").mkdir()
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Tasks\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
@@ -89,8 +89,8 @@ Test goal
             # Create README so goal is inferred
             Path("README.md").write_text("# Test Project\n\nThis is a test.")
 
-            # Create existing TASKS.md with a task
-            Path("TASKS.md").write_text(
+            # Create existing TODO.md with a task
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n- [ ] Existing task\n"
             )
 
@@ -111,13 +111,13 @@ Test goal
             ):
                 result = runner.invoke(
                     app,
-                    ["init"],
+                    ["init", "--suggest"],
                     input="y\n1\nn\n",
                 )
 
             assert result.exit_code == 0
 
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             # Should have exactly one "Existing task", not duplicated
             assert content.count("Existing task") == 1
             # Should have the new task
@@ -130,7 +130,7 @@ Test goal
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Tasks\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
@@ -138,7 +138,7 @@ Test goal
             # Create README so goal is inferred
             Path("README.md").write_text("# Test Project\n\nThis is a test.")
 
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n"
                 "## Done\n\n"
                 "- [x] Completed task 1\n"
@@ -164,13 +164,13 @@ Test goal
             ):
                 result = runner.invoke(
                     app,
-                    ["init"],
+                    ["init", "--suggest"],
                     input="y\n1\nn\n",
                 )
 
             assert result.exit_code == 0
 
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             # Done section preserved
             assert "- [x] Completed task 1" in content
             assert "- [x] Completed task 2" in content
@@ -187,7 +187,7 @@ Test goal
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("templates").mkdir()
             (Path("templates") / "LOOP-PROMPT.md").write_text("## Goal\n\n{{goal}}\n")
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
@@ -195,27 +195,24 @@ Test goal
             # Create existing LOOP-PROMPT.md
             Path("LOOP-PROMPT.md").write_text("Existing loop prompt")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             # Should error because LOOP-PROMPT.md exists
             assert result.exit_code == 1
             assert "exists" in result.output.lower() or "force" in result.output.lower()
 
     def test_init_force_overwrites_tasks_file(self, tmp_path: Path) -> None:
-        """With --force, init completely overwrites TASKS.md."""
+        """With --force, init completely overwrites TODO.md."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("templates").mkdir()
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Tasks\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
@@ -223,8 +220,8 @@ Test goal
             # Create README so goal is inferred
             Path("README.md").write_text("# Test Project\n\nThis is a test.")
 
-            # Create existing TASKS.md with tasks that should be overwritten
-            Path("TASKS.md").write_text(
+            # Create existing TODO.md with tasks that should be overwritten
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n- [ ] Task to be overwritten\n"
             )
 
@@ -243,13 +240,13 @@ Test goal
             ):
                 result = runner.invoke(
                     app,
-                    ["init", "--force"],
+                    ["init", "--force", "--suggest"],
                     input="y\n1\nn\n",
                 )
 
             assert result.exit_code == 0
 
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             # Old task should be gone
             assert "Task to be overwritten" not in content
             # Only new task should exist
@@ -262,7 +259,7 @@ Test goal
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Tasks\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
@@ -270,7 +267,7 @@ Test goal
             # Create README so goal is inferred
             Path("README.md").write_text("# Test Project\n\nThis is a test.")
 
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Existing task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Existing task\n")
 
             mock_output = """```markdown
 ## Goal
@@ -287,7 +284,7 @@ Test goal
             ):
                 result = runner.invoke(
                     app,
-                    ["init"],
+                    ["init", "--suggest"],
                     input="y\n1\nn\n",
                 )
 
@@ -301,32 +298,29 @@ Test goal
             )
 
     def test_init_manual_entry_merges_with_existing(self, tmp_path: Path) -> None:
-        """Manual task entry also merges with existing TASKS.md."""
+        """Manual task entry also merges with existing TODO.md."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("templates").mkdir()
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Tasks\n\n{{tasks}}\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Old task\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Old task\n")
 
-            # Claude returns nothing, so user enters manually
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nManual task 1\nManual task 2\n\n1\nn\n",
-                )
+            # No --suggest, so no Claude call, user enters manually
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nManual task 1\nManual task 2\n\n1\nn\n",
+            )
 
             assert result.exit_code == 0
 
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             # Old task preserved
             assert "- [ ] Old task" in content
             # New manual tasks added

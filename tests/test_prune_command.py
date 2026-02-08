@@ -15,13 +15,13 @@ class TestPruneCommand:
     def test_prune_removes_done_tasks(self, tmp_path: Path) -> None:
         """Removes completed tasks from Done section."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n- [x] First task\n- [x] Second task\n\n## Todo\n\n- [ ] Pending task\n"
             )
 
             result = runner.invoke(app, ["prune", "--force"])
 
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "First task" not in content
             assert "Second task" not in content
             assert "Pending task" in content
@@ -33,14 +33,14 @@ class TestPruneCommand:
     def test_prune_dry_run_preview(self, tmp_path: Path) -> None:
         """--dry-run shows what would be removed without modifying file."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n- [x] Done task\n\n## Todo\n\n- [ ] Open task\n"
             )
 
             result = runner.invoke(app, ["prune", "--dry-run"])
 
             # File should be unchanged
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "Done task" in content
 
         assert result.exit_code == 0
@@ -50,13 +50,13 @@ class TestPruneCommand:
     def test_prune_force_skips_confirmation(self, tmp_path: Path) -> None:
         """--force skips confirmation prompt."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n- [x] Completed item\n\n## Todo\n\n"
             )
 
             result = runner.invoke(app, ["prune", "--force"])
 
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "Completed item" not in content
 
         assert result.exit_code == 0
@@ -65,7 +65,7 @@ class TestPruneCommand:
     def test_prune_no_done_tasks(self, tmp_path: Path) -> None:
         """Shows message when no completed tasks exist."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## Todo\n\n- [ ] Open task\n"
             )
 
@@ -85,7 +85,7 @@ class TestPruneCommand:
     def test_prune_requires_confirmation(self, tmp_path: Path) -> None:
         """Prompts for confirmation without --force."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n- [x] Done task\n\n## Todo\n\n"
             )
 
@@ -93,7 +93,7 @@ class TestPruneCommand:
             result = runner.invoke(app, ["prune"], input="n\n")
 
             # File should be unchanged
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "Done task" in content
 
         assert result.exit_code == 0
@@ -102,13 +102,13 @@ class TestPruneCommand:
     def test_prune_confirmation_yes(self, tmp_path: Path) -> None:
         """Tasks are removed when user confirms."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n- [x] Done task\n\n## Todo\n\n"
             )
 
             result = runner.invoke(app, ["prune"], input="y\n")
 
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "Done task" not in content
 
         assert result.exit_code == 0
@@ -132,13 +132,13 @@ class TestPruneCommand:
     def test_prune_preserves_todo_section(self, tmp_path: Path) -> None:
         """Todo section remains intact after pruning."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n- [x] Finished\n\n## Todo\n\n- [ ] Task 1\n- [ ] Task 2\n"
             )
 
             result = runner.invoke(app, ["prune", "--force"])
 
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "- [ ] Task 1" in content
             assert "- [ ] Task 2" in content
             assert "Finished" not in content

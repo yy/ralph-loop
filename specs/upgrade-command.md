@@ -10,7 +10,7 @@ Add a `wiggum upgrade` command that updates wiggum-managed files to the latest v
 |------|------------------|
 | `LOOP-PROMPT.md` | Replace with latest template (backup old) |
 | `.wiggum.toml` | Merge new config options (preserve existing values) |
-| `TASKS.md` | Add missing sections only (preserve user tasks) |
+| `TODO.md` | Add missing sections only (preserve user tasks) |
 
 ## Behavior
 
@@ -35,7 +35,7 @@ LOOP-PROMPT.md: v0.4.1 → v0.5.0
   - [loop] agent = "claude" (default)
   - [git] branch_prefix = "wiggum" (default)
 
-TASKS.md: up to date
+TODO.md: up to date
 
 Upgrade? [y/N] y
 ✓ Backed up LOOP-PROMPT.md → LOOP-PROMPT.md.bak
@@ -48,7 +48,7 @@ Upgrade? [y/N] y
 ```
 wiggum upgrade prompt      # Only upgrade LOOP-PROMPT.md
 wiggum upgrade config      # Only upgrade .wiggum.toml
-wiggum upgrade tasks       # Only upgrade TASKS.md structure
+wiggum upgrade tasks       # Only upgrade TODO.md structure
 wiggum upgrade --all       # Upgrade all (default)
 ```
 
@@ -106,7 +106,7 @@ enabled = false
 branch_prefix = "wiggum"
 ```
 
-### TASKS.md
+### TODO.md
 
 1. Check for required sections: `## Todo`, `## Done`
 2. Add missing sections without touching existing tasks

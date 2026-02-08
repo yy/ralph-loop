@@ -276,7 +276,7 @@ def merge_changelog(
 
 
 def clear_done_tasks(tasks_file: Path) -> None:
-    """Remove completed tasks from the Done section of TASKS.md.
+    """Remove completed tasks from the Done section of TODO.md.
 
     Args:
         tasks_file: Path to the tasks file.

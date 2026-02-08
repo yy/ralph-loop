@@ -66,10 +66,10 @@ else
     exit 1
 fi
 
-# Test 5: add command creates TASKS.md
+# Test 5: add command creates TODO.md
 echo -n "Test 5: add command works... "
 wiggum add "Test task from PyPI install" > /dev/null
-if [[ -f "TASKS.md" ]] && grep -q "Test task from PyPI install" TASKS.md; then
+if [[ -f "TODO.md" ]] && grep -q "Test task from PyPI install" TODO.md; then
     echo "PASS"
 else
     echo "FAIL"

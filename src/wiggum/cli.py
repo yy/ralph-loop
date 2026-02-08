@@ -49,9 +49,27 @@ from wiggum.tasks import (
 app = typer.Typer(help="Run iterative agent loops with task tracking")
 
 
+def _resolve_tasks_file(tasks_file: Path) -> Path:
+    """Resolve tasks file path with backward compat fallback.
+
+    If the given path doesn't exist but TASKS.md does, fall back
+    to TASKS.md and warn the user.
+    """
+    if tasks_file.exists():
+        return tasks_file
+    if tasks_file.name == "TODO.md" and Path("TASKS.md").exists():
+        typer.echo(
+            "Warning: TASKS.md is deprecated, rename to TODO.md "
+            "(run 'wiggum upgrade' to migrate)",
+            err=True,
+        )
+        return Path("TASKS.md")
+    return tasks_file
+
+
 def tasks_file_option(
     short_flag: bool = True,
-    help_text: str = "Tasks file (default: TASKS.md)",
+    help_text: str = "Tasks file (default: TODO.md)",
     allow_none: bool = False,
 ) -> Any:
     """Factory for the tasks file option used across multiple commands.
@@ -60,13 +78,13 @@ def tasks_file_option(
         short_flag: Whether to include -f as a short option.
         help_text: Custom help text for the option.
         allow_none: If True, default is None (for config fallback in run command).
-                    If False, default is Path("TASKS.md").
+                    If False, default is Path("TODO.md").
 
     Returns:
         A typer.Option configured for tasks file selection.
     """
     flags = ["-f", "--tasks-file"] if short_flag else ["--tasks"]
-    default = None if allow_none else Path("TASKS.md")
+    default = None if allow_none else Path("TODO.md")
     return typer.Option(
         default,
         *flags,
@@ -175,7 +193,7 @@ def run(
     identify_tasks: bool = typer.Option(
         False,
         "--identify-tasks",
-        help="Analyze codebase and populate TASKS.md with refactoring/cleanup tasks, then exit",
+        help="Analyze codebase and populate TODO.md with refactoring/cleanup tasks, then exit",
     ),
     create_pr: bool = typer.Option(
         False,
@@ -223,7 +241,7 @@ def run(
         help="Delete diary file after consolidation",
     ),
 ) -> None:
-    """Run the agent loop. Stops when all tasks in TASKS.md are complete."""
+    """Run the agent loop. Stops when all tasks in TODO.md are complete."""
     # Validate config file before resolving
     config = read_config()
     if config:
@@ -266,7 +284,7 @@ def run(
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(1)
 
-    # Handle --identify-tasks: analyze codebase and populate TASKS.md
+    # Handle --identify-tasks: analyze codebase and populate TODO.md
     if identify_tasks:
         _run_identify_tasks(cfg.tasks_file)
         return
@@ -548,7 +566,7 @@ def run(
                     pr_body = (
                         "## Summary\n\n"
                         "Automated changes made by wiggum loop.\n\n"
-                        f"See TASKS.md for completed tasks.\n\n"
+                        f"See TODO.md for completed tasks.\n\n"
                         f"Branch: `{current}`"
                     )
                     pr_url = git_create_pr(
@@ -571,6 +589,12 @@ def run(
 @app.command()
 def init(
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing files"),
+    suggest: bool = typer.Option(
+        False,
+        "--suggest",
+        "-s",
+        help="Use Claude to suggest tasks and constraints",
+    ),
     templates_dir: Optional[Path] = typer.Option(
         None,
         "--templates",
@@ -578,24 +602,24 @@ def init(
         help="Templates directory (default: package templates)",
     ),
 ) -> None:
-    """Initialize a loop with LOOP-PROMPT.md and TASKS.md using agent-assisted planning."""
+    """Initialize a loop with LOOP-PROMPT.md and TODO.md."""
     templates_dir = resolve_templates_dir(templates_dir)
     prompt_template_path = templates_dir / "LOOP-PROMPT.md"
-    tasks_template_path = templates_dir / "TASKS.md"
+    tasks_template_path = templates_dir / "TODO.md"
     meta_prompt_path = templates_dir / "META-PROMPT.md"
 
     if not prompt_template_path.exists():
         typer.echo(f"Error: Template not found: {prompt_template_path}", err=True)
         raise typer.Exit(1)
 
-    if not meta_prompt_path.exists():
+    if suggest and not meta_prompt_path.exists():
         typer.echo(f"Error: Meta prompt not found: {meta_prompt_path}", err=True)
         raise typer.Exit(1)
 
     prompt_path = Path("LOOP-PROMPT.md")
-    tasks_path = Path("TASKS.md")
+    tasks_path = _resolve_tasks_file(Path("TODO.md"))
 
-    # Track if we're updating existing TASKS.md (for merge behavior)
+    # Track if we're updating existing TODO.md (for merge behavior)
     tasks_file_exists = tasks_path.exists()
 
     # Check for existing files
@@ -606,7 +630,7 @@ def init(
                 err=True,
             )
             raise typer.Exit(1)
-        # Note: TASKS.md existence is OK - we'll merge tasks instead of failing
+        # Note: TODO.md existence is OK - we'll merge tasks instead of failing
 
     typer.echo("Setting up wiggum...\n")
 
@@ -617,55 +641,59 @@ def init(
         readme_content = readme_path.read_text()
         typer.echo("Found README.md - using it for context.")
 
-    # Agent-assisted planning (always)
-    typer.echo("\nAnalyzing codebase and planning tasks...")
-    meta_prompt = meta_prompt_path.read_text()
-    if readme_content:
-        meta_prompt = meta_prompt.replace(
-            "{{goal}}", f"(Infer from README below)\n\n## README.md\n\n{readme_content}"
-        )
-    else:
-        meta_prompt = meta_prompt.replace(
-            "{{goal}}", "(No README found - analyze codebase)"
-        )
-
-    # Include existing tasks context if TASKS.md exists
-    existing_tasks_context = get_existing_tasks_context(tasks_path)
-    meta_prompt = meta_prompt.replace("{{existing_tasks}}", existing_tasks_context)
-
-    config, error = run_claude_with_retry(meta_prompt)
-
     use_suggestions = False
     doc_files = "README.md, CLAUDE.md"
     tasks = []
     suggested_constraints = {}
 
-    if error:
-        typer.echo(error, err=True)
-    elif config:
-        suggested_tasks = config.get("tasks", [])
-        suggested_constraints = config.get("constraints", {})
+    if suggest:
+        # Agent-assisted planning
+        typer.echo("\nAnalyzing codebase and planning tasks...")
+        meta_prompt = meta_prompt_path.read_text()
+        if readme_content:
+            meta_prompt = meta_prompt.replace(
+                "{{goal}}",
+                f"(Infer from README below)\n\n## README.md\n\n{readme_content}",
+            )
+        else:
+            meta_prompt = meta_prompt.replace(
+                "{{goal}}", "(No README found - analyze codebase)"
+            )
 
-        typer.echo("\nSuggested tasks:")
-        for task_desc in suggested_tasks:
-            typer.echo(f"  - {task_desc}")
+        # Include existing tasks context if TODO.md exists
+        existing_tasks_context = get_existing_tasks_context(tasks_path)
+        meta_prompt = meta_prompt.replace("{{existing_tasks}}", existing_tasks_context)
 
-        # Show suggested constraints if present
-        if suggested_constraints:
-            typer.echo("\nSuggested security constraints:")
-            security_mode = suggested_constraints.get("security_mode", "conservative")
-            typer.echo(f"  Security mode: {security_mode}")
-            if security_mode == "path_restricted":
-                allow_paths = suggested_constraints.get("allow_paths", "")
-                typer.echo(f"  Allowed paths: {allow_paths}")
-            if "internet_access" in suggested_constraints:
-                typer.echo(
-                    f"  Internet access: {suggested_constraints['internet_access']}"
+        config, error = run_claude_with_retry(meta_prompt)
+
+        if error:
+            typer.echo(error, err=True)
+        elif config:
+            suggested_tasks = config.get("tasks", [])
+            suggested_constraints = config.get("constraints", {})
+
+            typer.echo("\nSuggested tasks:")
+            for task_desc in suggested_tasks:
+                typer.echo(f"  - {task_desc}")
+
+            # Show suggested constraints if present
+            if suggested_constraints:
+                typer.echo("\nSuggested security constraints:")
+                security_mode = suggested_constraints.get(
+                    "security_mode", "conservative"
                 )
+                typer.echo(f"  Security mode: {security_mode}")
+                if security_mode == "path_restricted":
+                    allow_paths = suggested_constraints.get("allow_paths", "")
+                    typer.echo(f"  Allowed paths: {allow_paths}")
+                if "internet_access" in suggested_constraints:
+                    typer.echo(
+                        f"  Internet access: {suggested_constraints['internet_access']}"
+                    )
 
-        if typer.confirm("\nUse these suggestions?", default=True):
-            tasks = [f"- [ ] {task_desc}" for task_desc in suggested_tasks]
-            use_suggestions = True
+            if typer.confirm("\nUse these suggestions?", default=True):
+                tasks = [f"- [ ] {task_desc}" for task_desc in suggested_tasks]
+                use_suggestions = True
 
     # Manual entry if suggestions not used
     if not use_suggestions:
@@ -740,7 +768,7 @@ def init(
     prompt_template = prompt_template_path.read_text()
     prompt_content = prompt_template.replace("{{doc_files}}", doc_files)
 
-    # Handle TASKS.md: merge if exists (unless --force), otherwise create new
+    # Handle TODO.md: merge if exists (unless --force), otherwise create new
     if tasks_file_exists and not force:
         # Merge: add only tasks that don't already exist
         existing_tasks = get_existing_task_descriptions(tasks_path)
@@ -774,7 +802,7 @@ def init(
 
     # Add wiggum files to .gitignore
     gitignore_path = Path(".gitignore")
-    wiggum_entries = [".wiggum/", "LOOP-PROMPT.md", "TASKS.md", ".wiggum.toml"]
+    wiggum_entries = [".wiggum/", "LOOP-PROMPT.md", ".wiggum.toml"]
     gitignore_content = gitignore_path.read_text() if gitignore_path.exists() else ""
     missing = [e for e in wiggum_entries if e not in gitignore_content]
     if missing:
@@ -782,11 +810,13 @@ def init(
         gitignore_path.write_text(gitignore_content.rstrip() + section)
         typer.echo("Updated .gitignore with wiggum files")
 
+    if not suggest:
+        typer.echo("\nTip: run 'wiggum suggest' to auto-discover tasks")
     typer.echo("\nRun the loop with: wiggum run")
 
 
 def _run_identify_tasks(tasks_file: Path) -> None:
-    """Analyze codebase and populate TASKS.md with identified tasks.
+    """Analyze codebase and populate TODO.md with identified tasks.
 
     Args:
         tasks_file: Path to the tasks file to populate.
@@ -853,10 +883,11 @@ def _run_identify_tasks(tasks_file: Path) -> None:
 def add(
     description: str = typer.Argument(..., help="Task description to add"),
     tasks_file: Path = tasks_file_option(
-        help_text="Tasks file to add to (default: TASKS.md)"
+        help_text="Tasks file to add to (default: TODO.md)"
     ),
 ) -> None:
-    """Add a new task to TASKS.md."""
+    """Add a new task to TODO.md."""
+    tasks_file = _resolve_tasks_file(tasks_file)
     # Validate description
     if not description or not description.strip():
         typer.echo("Error: Task description cannot be empty.", err=True)
@@ -871,10 +902,11 @@ def add(
 @app.command(name="list")
 def list_tasks(
     tasks_file: Path = tasks_file_option(
-        help_text="Tasks file to read (default: TASKS.md)"
+        help_text="Tasks file to read (default: TODO.md)"
     ),
 ) -> None:
-    """List tasks from TASKS.md."""
+    """List tasks from TODO.md."""
+    tasks_file = _resolve_tasks_file(tasks_file)
     task_list = get_all_tasks(tasks_file)
 
     if task_list is None:
@@ -899,7 +931,7 @@ def list_tasks(
 @app.command()
 def suggest(
     tasks_file: Path = tasks_file_option(
-        help_text="Tasks file to add tasks to (default: TASKS.md)"
+        help_text="Tasks file to add tasks to (default: TODO.md)"
     ),
     accept_all: bool = typer.Option(
         False,
@@ -909,6 +941,7 @@ def suggest(
     ),
 ) -> None:
     """Interactively discover and add tasks using Claude's planning mode."""
+    tasks_file = _resolve_tasks_file(tasks_file)
     templates_dir = resolve_templates_dir()
     meta_prompt_path = templates_dir / "META-PROMPT.md"
 
@@ -959,7 +992,7 @@ def suggest(
     ]
 
     if not new_tasks:
-        typer.echo("All suggested tasks already exist in TASKS.md.")
+        typer.echo("All suggested tasks already exist in TODO.md.")
         return
 
     typer.echo(f"\nFound {len(new_tasks)} new task suggestion(s):\n")
@@ -1009,7 +1042,7 @@ def spec(
     """Create a new spec file from template.
 
     Spec files are detailed design documents for complex features or changes.
-    Tasks in TASKS.md can reference specs like: `- [ ] Implement feature (see specs/feature.md)`
+    Tasks in TODO.md can reference specs like: `- [ ] Implement feature (see specs/feature.md)`
 
     The spec template includes sections for overview, requirements, implementation details,
     and test plan. Edit the generated file to fill in the specifics of your feature.
@@ -1041,7 +1074,7 @@ def spec(
 
     spec_file.write_text(spec_content)
     typer.echo(f"Created {spec_file}")
-    typer.echo("\nTo link this spec to a task, add to TASKS.md:")
+    typer.echo("\nTo link this spec to a task, add to TODO.md:")
     typer.echo(f"  - [ ] Implement {display_name} (see {spec_file})")
 
 
@@ -1076,13 +1109,13 @@ def upgrade(
 ) -> None:
     """Upgrade wiggum-managed files to the latest version.
 
-    Upgrades LOOP-PROMPT.md, .wiggum.toml, and TASKS.md structure.
+    Upgrades LOOP-PROMPT.md, .wiggum.toml, and TODO.md structure.
 
     Examples:
         wiggum upgrade           # Check and upgrade all files
         wiggum upgrade prompt    # Only upgrade LOOP-PROMPT.md
         wiggum upgrade config    # Only upgrade .wiggum.toml
-        wiggum upgrade tasks     # Only upgrade TASKS.md structure
+        wiggum upgrade tasks     # Only upgrade TODO.md structure
     """
     import tomli_w
 
@@ -1094,6 +1127,7 @@ def upgrade(
         get_next_backup_path,
         is_version_outdated,
         merge_config_with_defaults,
+        needs_tasks_rename,
         tasks_file_needs_upgrade,
     )
 
@@ -1111,15 +1145,20 @@ def upgrade(
 
     prompt_path = Path("LOOP-PROMPT.md")
     config_path = Path(CONFIG_FILE)
-    tasks_path = Path("TASKS.md")
+    tasks_path = Path("TODO.md")
 
     # Determine which files to upgrade
     upgrade_prompt = target is None or target == "prompt"
     upgrade_config = target is None or target == "config"
     upgrade_tasks = target is None or target == "tasks"
 
-    # Check if any managed files exist
-    any_exists = prompt_path.exists() or config_path.exists() or tasks_path.exists()
+    # Check if any managed files exist (also check for old TASKS.md)
+    any_exists = (
+        prompt_path.exists()
+        or config_path.exists()
+        or tasks_path.exists()
+        or Path("TASKS.md").exists()
+    )
     if not any_exists:
         typer.echo("No wiggum files found. Run 'wiggum init' first.", err=True)
         raise typer.Exit(1)
@@ -1131,6 +1170,12 @@ def upgrade(
 
     # Collect changes
     changes = []
+
+    # Check for TASKS.md → TODO.md migration
+    rename_needed = False
+    if upgrade_tasks and needs_tasks_rename():
+        rename_needed = True
+        changes.append("TASKS.md → TODO.md: rename needed")
 
     # Check LOOP-PROMPT.md
     prompt_outdated = False
@@ -1152,12 +1197,12 @@ def upgrade(
             for section, key, default in missing_options:
                 changes.append(f"  - [{section}] {key} = {repr(default)}")
 
-    # Check TASKS.md
+    # Check TODO.md
     tasks_outdated = False
     if upgrade_tasks and tasks_content is not None:
         tasks_outdated = tasks_file_needs_upgrade(tasks_content)
         if tasks_outdated:
-            changes.append("TASKS.md: missing required sections")
+            changes.append("TODO.md: missing required sections")
 
     # Show status
     typer.echo("Checking wiggum files...\n")
@@ -1181,6 +1226,21 @@ def upgrade(
             return
 
     # Apply upgrades
+
+    # Migrate TASKS.md → TODO.md first (before other upgrades)
+    if upgrade_tasks and rename_needed:
+        from wiggum.upgrade import migrate_tasks_to_todo
+
+        actions = migrate_tasks_to_todo()
+        for action in actions:
+            typer.echo(f"✓ {action}")
+        # Re-read tasks content and re-check structure after rename
+        if tasks_path.exists():
+            tasks_content = tasks_path.read_text()
+            tasks_outdated = tasks_file_needs_upgrade(tasks_content)
+            if tasks_outdated:
+                changes.append("TODO.md: missing required sections")
+
     if upgrade_prompt and prompt_outdated and prompt_content is not None:
         # Backup current file
         if not no_backup:
@@ -1201,12 +1261,12 @@ def upgrade(
     if upgrade_tasks and tasks_outdated and tasks_content is not None:
         upgraded_content = add_missing_task_sections(tasks_content)
         tasks_path.write_text(upgraded_content)
-        typer.echo("✓ TASKS.md structure updated")
+        typer.echo("✓ TODO.md structure updated")
 
 
 # Files managed by wiggum that can be cleaned
 MANAGED_CONFIG_FILES = ["LOOP-PROMPT.md", ".wiggum.toml"]
-TASKS_FILE = "TASKS.md"
+TASKS_FILE = "TODO.md"
 
 
 @app.command()
@@ -1214,12 +1274,12 @@ def clean(
     all_files: bool = typer.Option(
         False,
         "--all",
-        help="Also remove TASKS.md",
+        help="Also remove TODO.md",
     ),
     keep_tasks: bool = typer.Option(
         False,
         "--keep-tasks",
-        help="Explicitly keep TASKS.md (no prompt)",
+        help="Explicitly keep TODO.md (no prompt)",
     ),
     force: bool = typer.Option(
         False,
@@ -1236,12 +1296,12 @@ def clean(
     """Remove wiggum-managed files from the current directory.
 
     By default, removes LOOP-PROMPT.md and .wiggum.toml.
-    TASKS.md is kept by default (prompts unless --keep-tasks or --all).
+    TODO.md is kept by default (prompts unless --keep-tasks or --all).
 
     Examples:
         wiggum clean              # Interactive removal
         wiggum clean --keep-tasks # Remove config, keep tasks
-        wiggum clean --all        # Remove everything including TASKS.md
+        wiggum clean --all        # Remove everything including TODO.md
         wiggum clean --dry-run    # Preview what would be removed
     """
     # Check for conflicting flags
@@ -1251,7 +1311,11 @@ def clean(
 
     # Find existing config files
     config_files_to_remove = [f for f in MANAGED_CONFIG_FILES if Path(f).exists()]
-    tasks_exists = Path(TASKS_FILE).exists()
+    # Check for TODO.md or legacy TASKS.md
+    tasks_file_name = TASKS_FILE
+    if not Path(TASKS_FILE).exists() and Path("TASKS.md").exists():
+        tasks_file_name = "TASKS.md"
+    tasks_exists = Path(tasks_file_name).exists()
 
     # Determine what to remove
     files_to_remove = config_files_to_remove.copy()
@@ -1260,19 +1324,20 @@ def clean(
     if tasks_exists:
         if all_files:
             # --all: remove tasks without asking
-            files_to_remove.append(TASKS_FILE)
+            files_to_remove.append(tasks_file_name)
             remove_tasks = True
         elif keep_tasks:
             # --keep-tasks: explicitly keep tasks
             remove_tasks = False
         elif not force and not dry_run:
-            # Interactive: ask about TASKS.md
+            # Interactive: ask about tasks file
             typer.echo(
-                "TASKS.md contains your task list. Remove it too? [y/N] ", nl=False
+                f"{tasks_file_name} contains your task list. Remove it too? [y/N] ",
+                nl=False,
             )
             response = typer.prompt("", default="n", show_default=False).lower()
             if response == "y":
-                files_to_remove.append(TASKS_FILE)
+                files_to_remove.append(tasks_file_name)
                 remove_tasks = True
 
     # Check if there's anything to clean
@@ -1288,7 +1353,7 @@ def clean(
                 typer.echo(f"  - {f}")
         if tasks_exists and not remove_tasks:
             typer.echo("Would keep:")
-            typer.echo(f"  - {TASKS_FILE} (use --all to remove)")
+            typer.echo(f"  - {tasks_file_name} (use --all to remove)")
         return
 
     # If only tasks exist and we're not removing them
@@ -1317,15 +1382,15 @@ def clean(
     # Show status of tasks file
     if tasks_exists and not remove_tasks:
         if force:
-            typer.echo(f"  Kept {TASKS_FILE} (use --all to include)")
+            typer.echo(f"  Kept {tasks_file_name} (use --all to include)")
         else:
-            typer.echo(f"  Kept {TASKS_FILE}")
+            typer.echo(f"  Kept {tasks_file_name}")
 
 
 @app.command()
 def prune(
     tasks_file: Path = tasks_file_option(
-        help_text="Tasks file to prune (default: TASKS.md)"
+        help_text="Tasks file to prune (default: TODO.md)"
     ),
     dry_run: bool = typer.Option(
         False,
@@ -1338,7 +1403,8 @@ def prune(
         help="Skip confirmation",
     ),
 ) -> None:
-    """Remove completed tasks from TASKS.md."""
+    """Remove completed tasks from TODO.md."""
+    tasks_file = _resolve_tasks_file(tasks_file)
     task_list = get_all_tasks(tasks_file)
 
     if task_list is None:
@@ -1381,7 +1447,7 @@ def changelog(
         help="Output file (default: CHANGELOG.md)",
     ),
     tasks_file: Path = tasks_file_option(
-        help_text="Tasks file to read (default: TASKS.md)"
+        help_text="Tasks file to read (default: TODO.md)"
     ),
     append: bool = typer.Option(
         False,
@@ -1401,12 +1467,12 @@ def changelog(
     clear_done: bool = typer.Option(
         False,
         "--clear-done",
-        help="Clear Done section in TASKS.md after generating changelog",
+        help="Clear Done section in TODO.md after generating changelog",
     ),
 ) -> None:
-    """Generate CHANGELOG.md from completed tasks in TASKS.md.
+    """Generate CHANGELOG.md from completed tasks in TODO.md.
 
-    Reads completed tasks from TASKS.md, categorizes them based on their
+    Reads completed tasks from TODO.md, categorizes them based on their
     description prefixes (Add/Fix/Update/Remove), and generates a changelog
     following the Keep a Changelog format.
 
@@ -1417,6 +1483,7 @@ def changelog(
         wiggum changelog --append           # Add to existing changelog
         wiggum changelog --clear-done       # Clear Done section after generating
     """
+    tasks_file = _resolve_tasks_file(tasks_file)
     # Get completed tasks
     task_list = get_all_tasks(tasks_file)
 

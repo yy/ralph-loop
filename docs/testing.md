@@ -73,11 +73,11 @@ with patch("subprocess.run") as mock_run:
 
 ### File-based tests
 
-Many tests create temporary TASKS.md or .wiggum.toml files:
+Many tests create temporary TODO.md or .wiggum.toml files:
 
 ```python
 def test_tasks(tmp_path):
-    tasks_file = tmp_path / "TASKS.md"
+    tasks_file = tmp_path / "TODO.md"
     tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] Do something\n")
 
     assert tasks_remaining(tasks_file) is True

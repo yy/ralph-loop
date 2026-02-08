@@ -15,7 +15,7 @@ class TestGetCurrentTask:
 
     def test_returns_first_incomplete_task(self, tmp_path: Path) -> None:
         """Returns the first task marked with - [ ]."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n## Todo\n\n- [ ] First task\n- [ ] Second task\n"
         )
@@ -24,27 +24,27 @@ class TestGetCurrentTask:
 
     def test_returns_none_when_all_complete(self, tmp_path: Path) -> None:
         """Returns None when all tasks are completed."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] Completed task\n")
         result = get_current_task(tasks_file)
         assert result is None
 
     def test_returns_none_when_file_missing(self, tmp_path: Path) -> None:
         """Returns None when tasks file doesn't exist."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         result = get_current_task(tasks_file)
         assert result is None
 
     def test_returns_none_for_empty_file(self, tmp_path: Path) -> None:
         """Returns None when tasks file is empty."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("")
         result = get_current_task(tasks_file)
         assert result is None
 
     def test_skips_completed_tasks(self, tmp_path: Path) -> None:
         """Returns first incomplete task, skipping completed ones."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n"
             "## Done\n\n"
@@ -58,14 +58,14 @@ class TestGetCurrentTask:
 
     def test_handles_multiline_task_descriptions(self, tmp_path: Path) -> None:
         """Returns only the first line of a task description."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] Main task description\n")
         result = get_current_task(tasks_file)
         assert result == "Main task description"
 
     def test_handles_in_progress_section(self, tmp_path: Path) -> None:
         """Tasks in 'In Progress' section are treated as current task."""
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text(
             "# Tasks\n\n"
             "## In Progress\n\n"
@@ -88,7 +88,7 @@ class TestRunDisplaysCurrentTask:
         # Setup
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] Implement feature X\n")
 
         def mock_agent_run(config):
@@ -129,7 +129,7 @@ class TestRunDisplaysCurrentTask:
         """When no tasks are found, shows appropriate message."""
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] All done\n")
 
         with patch("wiggum.agents.check_cli_available", return_value=True):

@@ -14,7 +14,7 @@ class TestIdentifyTasks:
     """Tests for the `wiggum run --identify-tasks` option."""
 
     def test_identify_tasks_populates_tasks_file(self, tmp_path: Path) -> None:
-        """--identify-tasks analyzes codebase and populates TASKS.md."""
+        """--identify-tasks analyzes codebase and populates TODO.md."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create minimal required files
             Path("templates").mkdir()
@@ -22,7 +22,7 @@ class TestIdentifyTasks:
                 "Analyze {{goal}}\n{{existing_tasks}}"
             )
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n## Done\n\n## In Progress\n\n## Todo\n\n"
             )
 
@@ -45,7 +45,7 @@ Test goal
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "- [ ] Refactor utility functions for clarity" in content
             assert "- [ ] Add missing test coverage" in content
             assert "- [ ] Clean up unused imports" in content
@@ -58,7 +58,7 @@ Test goal
                 "Analyze {{goal}}\n{{existing_tasks}}"
             )
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n")
 
             mock_output = """```markdown
 ## Goal
@@ -92,7 +92,7 @@ Test goal
                 "Analyze {{goal}}\n{{existing_tasks}}"
             )
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
-            Path("TASKS.md").write_text(
+            Path("TODO.md").write_text(
                 "# Tasks\n\n"
                 "## Done\n\n"
                 "- [x] Completed task\n\n"
@@ -118,7 +118,7 @@ Test goal
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             # Existing task should not be duplicated
             assert content.count("Existing task") == 1
             # New task should be added
@@ -134,7 +134,7 @@ Test goal
                 "Analyze {{goal}}\n{{existing_tasks}}"
             )
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n")
 
             mock_output = """```markdown
 ## Goal
@@ -165,7 +165,7 @@ Test goal
                 "Analyze {{goal}}\n{{existing_tasks}}"
             )
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Existing\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Existing\n")
 
             with patch(
                 "wiggum.runner.run_claude_for_planning", return_value=(None, None)
@@ -176,7 +176,7 @@ Test goal
             # Should indicate no output from Claude
             assert "no output" in result.output.lower()
             # Existing tasks preserved
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "- [ ] Existing" in content
 
     def test_identify_tasks_uses_bundled_template_when_no_local(
@@ -185,7 +185,7 @@ Test goal
         """--identify-tasks uses bundled META-PROMPT.md when no local templates exist."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n")
 
             # No local templates/ directory - should fall back to bundled templates
             mock_output = """```markdown
@@ -204,18 +204,18 @@ Test goal
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
-            content = Path("TASKS.md").read_text()
+            content = Path("TODO.md").read_text()
             assert "- [ ] Task using bundled template" in content
 
     def test_identify_tasks_creates_tasks_file_if_missing(self, tmp_path: Path) -> None:
-        """--identify-tasks creates TASKS.md if it doesn't exist."""
+        """--identify-tasks creates TODO.md if it doesn't exist."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("templates").mkdir()
             (Path("templates") / "META-PROMPT.md").write_text(
                 "Analyze {{goal}}\n{{existing_tasks}}"
             )
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
-            # Note: No TASKS.md file
+            # Note: No TODO.md file
 
             mock_output = """```markdown
 ## Goal
@@ -233,8 +233,8 @@ Test goal
                 result = runner.invoke(app, ["run", "--identify-tasks"])
 
             assert result.exit_code == 0
-            assert Path("TASKS.md").exists()
-            content = Path("TASKS.md").read_text()
+            assert Path("TODO.md").exists()
+            content = Path("TODO.md").read_text()
             assert "- [ ] First identified task" in content
 
     def test_identify_tasks_uses_readme_for_context(self, tmp_path: Path) -> None:
@@ -248,7 +248,7 @@ Test goal
             Path("README.md").write_text(
                 "# My CLI Tool\n\nA tool for automating tasks."
             )
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n")
 
             mock_output = """```markdown
 ## Goal
@@ -278,7 +278,7 @@ Build CLI automation tool
                 "Analyze {{goal}}\n{{existing_tasks}}"
             )
             Path("LOOP-PROMPT.md").write_text("## Goal\n\nTest goal")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n")
 
             mock_output = """```markdown
 ## Goal

@@ -10,7 +10,7 @@ Add a `wiggum clean` command that removes wiggum-managed files from the current 
 |------|------------------|
 | `LOOP-PROMPT.md` | Remove |
 | `.wiggum.toml` | Remove |
-| `TASKS.md` | Keep (ask user) |
+| `TODO.md` | Keep (ask user) |
 
 ## Behavior
 
@@ -26,20 +26,20 @@ This will remove wiggum configuration files:
   - LOOP-PROMPT.md
   - .wiggum.toml
 
-TASKS.md contains your task list. Remove it too? [y/N] n
+TODO.md contains your task list. Remove it too? [y/N] n
 
 Remove these files? [y/N] y
 ✓ Removed LOOP-PROMPT.md
 ✓ Removed .wiggum.toml
-  Kept TASKS.md
+  Kept TODO.md
 ```
 
 ### Flags:
 
 | Flag | Behavior |
 |------|----------|
-| `--all` | Also remove TASKS.md without prompting |
-| `--keep-tasks` | Explicitly keep TASKS.md (no prompt) |
+| `--all` | Also remove TODO.md without prompting |
+| `--keep-tasks` | Explicitly keep TODO.md (no prompt) |
 | `--force` / `-f` | Skip confirmation prompts |
 | `--dry-run` | Show what would be removed without deleting |
 
@@ -79,7 +79,7 @@ This will remove wiggum configuration files:
   - .wiggum.toml
 
 LOOP-PROMPT.md not found (already removed or never created)
-TASKS.md not found
+TODO.md not found
 
 Remove these files? [y/N] y
 ✓ Removed .wiggum.toml
@@ -93,7 +93,7 @@ Would remove:
   - LOOP-PROMPT.md
   - .wiggum.toml
 Would keep:
-  - TASKS.md (use --all to remove)
+  - TODO.md (use --all to remove)
 ```
 
 ### Force mode:
@@ -102,7 +102,7 @@ Would keep:
 $ wiggum clean --force
 ✓ Removed LOOP-PROMPT.md
 ✓ Removed .wiggum.toml
-  Kept TASKS.md (use --all to include)
+  Kept TODO.md (use --all to include)
 ```
 
 ## Edge Cases
@@ -122,17 +122,17 @@ $ wiggum clean --force
 
 ```python
 MANAGED_FILES = ["LOOP-PROMPT.md", ".wiggum.toml"]
-TASK_FILE = "TASKS.md"
+TASK_FILE = "TODO.md"
 
 def clean(all: bool, keep_tasks: bool, force: bool, dry_run: bool):
     files_to_remove = [f for f in MANAGED_FILES if Path(f).exists()]
 
-    # Handle TASKS.md
+    # Handle TODO.md
     if Path(TASK_FILE).exists() and not keep_tasks:
         if all:
             files_to_remove.append(TASK_FILE)
         elif not force:
-            # Prompt user about TASKS.md
+            # Prompt user about TODO.md
             ...
 
     # Confirm and remove

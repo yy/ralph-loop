@@ -14,7 +14,7 @@ This is the "Ralph Wiggum loop" - the simplest possible agent loop. wiggum adds 
 - **Minimal** - does one thing well: run a prompt in a loop until tasks are done
 - **Opinionated** - sensible defaults, few options
 - **Unobtrusive** - infer what you can, don't ask obvious questions
-- **Task-driven** - stops when TASKS.md has no unchecked items
+- **Task-driven** - stops when TODO.md has no unchecked items
 - **Test-driven** - write tests first for new behavior; skip tests for trivial changes (renames, constants, config)
 
 ## Installation
@@ -42,15 +42,15 @@ wiggum run
 
 ## How It Works
 
-1. `init` creates `LOOP-PROMPT.md` (workflow) and `TASKS.md` (task list)
-2. `run` executes Claude with the prompt, checks TASKS.md after each iteration
+1. `init` creates `LOOP-PROMPT.md` (workflow) and `TODO.md` (task list)
+2. `run` executes Claude with the prompt, checks TODO.md after each iteration
 3. Loop stops when all tasks are checked off (`- [x]`)
 
 ## Commands
 
 ### init
 
-Initialize a new loop with `LOOP-PROMPT.md`, `TASKS.md`, and `.wiggum.toml`.
+Initialize a new loop with `LOOP-PROMPT.md`, `TODO.md`, and `.wiggum.toml`.
 
 ```bash
 wiggum init           # Interactive setup with Claude
@@ -66,7 +66,7 @@ wiggum run                    # Run with defaults
 wiggum run -n 5               # Max 5 iterations
 wiggum run --continue         # Keep context between iterations
 wiggum run --keep-running     # Continue when tasks complete (agent can add new)
-wiggum run --identify-tasks   # Analyze codebase, populate TASKS.md, then exit
+wiggum run --identify-tasks   # Analyze codebase, populate TODO.md, then exit
 wiggum run --no-yolo          # Ask for permissions
 wiggum run -v                 # Show git status after each iteration
 ```
@@ -124,7 +124,7 @@ Remove wiggum-managed files.
 
 ```bash
 wiggum clean              # Interactive removal
-wiggum clean --keep-tasks # Remove config, keep TASKS.md
+wiggum clean --keep-tasks # Remove config, keep TODO.md
 wiggum clean --all        # Remove everything
 ```
 

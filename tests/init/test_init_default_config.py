@@ -1,7 +1,6 @@
 """Tests for default configuration values written during init."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 from typer.testing import CliRunner
 
@@ -21,20 +20,17 @@ class TestInitWritesDefaultLoopConfig:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                # doc files, task, empty, security (1), git (n)
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            # doc files, task, empty, security (1), git (n)
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
 
@@ -54,20 +50,17 @@ class TestInitWritesDefaultLoopConfig:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                # doc files, task, empty, yolo mode (3), git (y)
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n3\ny\n",
-                )
+            # doc files, task, empty, yolo mode (3), git (y)
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n3\ny\n",
+            )
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
 
@@ -87,20 +80,17 @@ class TestInitWritesDefaultLoopConfig:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                # doc files, task, empty, security (1), git (n)
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            # doc files, task, empty, security (1), git (n)
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             assert result.exit_code == 0
 

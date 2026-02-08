@@ -8,7 +8,7 @@ from typing import Optional
 
 @dataclass
 class TaskList:
-    """Parsed task list from TASKS.md."""
+    """Parsed task list from TODO.md."""
 
     todo: list[str] = field(default_factory=list)
     done: list[str] = field(default_factory=list)
@@ -25,8 +25,8 @@ def _find_tasks(content: str, pattern: re.Pattern[str]) -> list[str]:
     return [task.strip() for task in pattern.findall(content)]
 
 
-def tasks_remaining(tasks_file: Path = Path("TASKS.md")) -> bool:
-    """Check if there are incomplete tasks in TASKS.md."""
+def tasks_remaining(tasks_file: Path = Path("TODO.md")) -> bool:
+    """Check if there are incomplete tasks in TODO.md."""
     if not tasks_file.exists():
         return True  # No tasks file means we don't know, keep running
 
@@ -37,8 +37,8 @@ def tasks_remaining(tasks_file: Path = Path("TASKS.md")) -> bool:
     return _TASK_BOX_PATTERN.search(content) is not None
 
 
-def get_current_task(tasks_file: Path = Path("TASKS.md")) -> Optional[str]:
-    """Get the first incomplete task from TASKS.md.
+def get_current_task(tasks_file: Path = Path("TODO.md")) -> Optional[str]:
+    """Get the first incomplete task from TODO.md.
 
     Args:
         tasks_file: Path to the tasks file.
@@ -87,7 +87,7 @@ def get_existing_tasks_context(tasks_file: Path) -> str:
 
     # Build context string
     parts = ["## Existing Tasks\n"]
-    parts.append("There is already a TASKS.md file with the following tasks:\n")
+    parts.append("There is already a TODO.md file with the following tasks:\n")
 
     if done_tasks:
         parts.append("\n### Completed")
@@ -108,7 +108,7 @@ def get_existing_tasks_context(tasks_file: Path) -> str:
 
 
 def get_existing_task_descriptions(tasks_file: Path) -> set[str]:
-    """Extract all task descriptions from an existing TASKS.md file.
+    """Extract all task descriptions from an existing TODO.md file.
 
     Args:
         tasks_file: Path to the tasks file.
@@ -186,8 +186,8 @@ def add_task_to_file(tasks_file: Path, task_description: str) -> None:
         tasks_file.write_text(content)
 
 
-def get_all_tasks(tasks_file: Path = Path("TASKS.md")) -> Optional[TaskList]:
-    """Get all tasks from TASKS.md grouped by status.
+def get_all_tasks(tasks_file: Path = Path("TODO.md")) -> Optional[TaskList]:
+    """Get all tasks from TODO.md grouped by status.
 
     Args:
         tasks_file: Path to the tasks file.

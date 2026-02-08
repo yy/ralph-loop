@@ -34,10 +34,10 @@ def restore_cwd():
         # [loop] section
         ("[loop]\nmax_iterations = 25\n", "loop", "max_iterations", 25),
         (
-            '[loop]\ntasks_file = "CUSTOM_TASKS.md"\n',
+            '[loop]\ntasks_file = "CUSTOM_TODO.md"\n',
             "loop",
             "tasks_file",
-            "CUSTOM_TASKS.md",
+            "CUSTOM_TODO.md",
         ),
         (
             '[loop]\nprompt_file = "MY-PROMPT.md"\n',
@@ -208,7 +208,7 @@ class TestRunCommandConfig:
         os.chdir(tmp_path)
         prompt_file = tmp_path / "LOOP-PROMPT.md"
         prompt_file.write_text("test prompt")
-        tasks_file = tmp_path / "TASKS.md"
+        tasks_file = tmp_path / "TODO.md"
         tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         if config_content:
             (tmp_path / ".wiggum.toml").write_text(config_content)
@@ -240,29 +240,29 @@ class TestRunCommandConfig:
         """run uses tasks_file from config."""
         os.chdir(tmp_path)
         (tmp_path / "LOOP-PROMPT.md").write_text("test prompt")
-        (tmp_path / "CUSTOM_TASKS.md").write_text("# Tasks\n\n## Done\n\n- [x] done\n")
+        (tmp_path / "CUSTOM_TODO.md").write_text("# Tasks\n\n## Done\n\n- [x] done\n")
         (tmp_path / ".wiggum.toml").write_text(
-            '[loop]\ntasks_file = "CUSTOM_TASKS.md"\n'
+            '[loop]\ntasks_file = "CUSTOM_TODO.md"\n'
         )
 
         result = runner.invoke(app, ["run", "--dry-run"])
 
-        assert "CUSTOM_TASKS.md" in result.output
+        assert "CUSTOM_TODO.md" in result.output
         assert result.exit_code == 0
 
     def test_tasks_file_cli_overrides_config(self, tmp_path: Path) -> None:
         """CLI --tasks flag overrides config."""
         os.chdir(tmp_path)
         (tmp_path / "LOOP-PROMPT.md").write_text("test prompt")
-        cli_tasks = tmp_path / "CLI_TASKS.md"
+        cli_tasks = tmp_path / "CLI_TODO.md"
         cli_tasks.write_text("# Tasks\n\n## Done\n\n- [x] done\n")
         (tmp_path / ".wiggum.toml").write_text(
-            '[loop]\ntasks_file = "CONFIG_TASKS.md"\n'
+            '[loop]\ntasks_file = "CONFIG_TODO.md"\n'
         )
 
         result = runner.invoke(app, ["run", "--dry-run", "--tasks", str(cli_tasks)])
 
-        assert "CLI_TASKS.md" in result.output
+        assert "CLI_TODO.md" in result.output
         assert result.exit_code == 0
 
     # --- prompt_file tests ---
@@ -271,7 +271,7 @@ class TestRunCommandConfig:
         """run uses prompt_file from config."""
         os.chdir(tmp_path)
         (tmp_path / "MY-PROMPT.md").write_text("custom prompt content")
-        (tmp_path / "TASKS.md").write_text("# Tasks\n\n## Done\n\n- [x] done\n")
+        (tmp_path / "TODO.md").write_text("# Tasks\n\n## Done\n\n- [x] done\n")
         (tmp_path / ".wiggum.toml").write_text('[loop]\nprompt_file = "MY-PROMPT.md"\n')
 
         result = runner.invoke(app, ["run", "--dry-run"])
@@ -285,7 +285,7 @@ class TestRunCommandConfig:
         cli_prompt = tmp_path / "cli-prompt.md"
         cli_prompt.write_text("cli prompt content")
         (tmp_path / "config-prompt.md").write_text("config prompt content")
-        (tmp_path / "TASKS.md").write_text("# Tasks\n\n## Done\n\n- [x] done\n")
+        (tmp_path / "TODO.md").write_text("# Tasks\n\n## Done\n\n- [x] done\n")
         (tmp_path / ".wiggum.toml").write_text(
             '[loop]\nprompt_file = "config-prompt.md"\n'
         )
@@ -531,12 +531,12 @@ class TestRunCommandConfig:
         """Dry run uses defaults when no config file exists."""
         os.chdir(tmp_path)
         (tmp_path / "LOOP-PROMPT.md").write_text("test prompt")
-        (tmp_path / "TASKS.md").write_text("# Tasks\n\n## Done\n\n- [x] done\n")
+        (tmp_path / "TODO.md").write_text("# Tasks\n\n## Done\n\n- [x] done\n")
 
         result = runner.invoke(app, ["run", "--dry-run"])
 
         assert "10 iterations" in result.output
-        assert "TASKS.md" in result.output
+        assert "TODO.md" in result.output
         assert result.exit_code == 0
 
     def test_dry_run_shows_session_mode_from_config(self, tmp_path: Path) -> None:
@@ -578,7 +578,7 @@ class TestAgentErrorHandling:
         """Unknown agent name should show error with available agents."""
         os.chdir(tmp_path)
         (tmp_path / "LOOP-PROMPT.md").write_text("test prompt")
-        (tmp_path / "TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
+        (tmp_path / "TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
 
         result = runner.invoke(app, ["run", "-n", "1", "--agent", "unknown_agent"])
 
@@ -606,7 +606,7 @@ class TestConfigSchemaValidation:
         """Set up a minimal project for validation tests."""
         os.chdir(tmp_path)
         (tmp_path / "LOOP-PROMPT.md").write_text("test prompt")
-        (tmp_path / "TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
+        (tmp_path / "TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
         if config_content:
             (tmp_path / ".wiggum.toml").write_text(config_content)
 

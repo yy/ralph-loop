@@ -26,9 +26,9 @@ Decisions that have been made and should not be re-litigated unless the context 
 
 **Rationale**: Adding a new config option means adding one line to the schema dict. The upgrade command automatically detects missing options by diffing against the schema.
 
-## TASKS.md merge on init (not overwrite)
+## TODO.md merge on init (not overwrite)
 
-**Decision**: `wiggum init` merges new tasks into existing TASKS.md rather than overwriting.
+**Decision**: `wiggum init` merges new tasks into existing TODO.md rather than overwriting.
 
 **Rationale**: Users may have manually added tasks. Overwriting would lose their work. The `--force` flag exists for when overwrite is intentional.
 
@@ -36,7 +36,7 @@ Decisions that have been made and should not be re-litigated unless the context 
 
 **Decision**: `tasks_remaining()` just does a regex search for `- [ ]` in the file. It doesn't parse sections or validate structure.
 
-**Rationale**: The agent writes to TASKS.md directly. We need to handle any valid markdown checkbox, regardless of what section it's in. A regex search is simpler and more robust than trying to parse the document structure.
+**Rationale**: The agent writes to TODO.md directly. We need to handle any valid markdown checkbox, regardless of what section it's in. A regex search is simpler and more robust than trying to parse the document structure.
 
 ## Yolo defaults to True
 

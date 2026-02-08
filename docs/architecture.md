@@ -2,16 +2,16 @@
 
 ## How wiggum works
 
-wiggum runs a coding agent (Claude, Codex, or Gemini) in a loop. Each iteration sends the same prompt. The loop stops when all tasks in TASKS.md are checked off.
+wiggum runs a coding agent (Claude, Codex, or Gemini) in a loop. Each iteration sends the same prompt. The loop stops when all tasks in TODO.md are checked off.
 
 ```
 wiggum run
   → read LOOP-PROMPT.md
   → for each iteration:
-      → check TASKS.md (stop if all done)
+      → check TODO.md (stop if all done)
       → run agent with prompt
       → print output
-      → check TASKS.md again
+      → check TODO.md again
   → consolidate learning diary (if enabled)
   → show git summary / create PR (if enabled)
 ```
@@ -23,7 +23,7 @@ src/wiggum/
 ├── cli.py          # All CLI commands (typer). Entry point.
 ├── config.py       # .wiggum.toml reading, validation, config resolution
 ├── runner.py       # Subprocess calls to agents, retry logic, log writing
-├── tasks.py        # TASKS.md parsing (regex-based)
+├── tasks.py        # TODO.md parsing (regex-based)
 ├── parsing.py      # Claude output parsing (markdown extraction)
 ├── agents.py       # Agent protocol, registry, CLI availability checks
 ├── agents_claude.py
@@ -38,7 +38,7 @@ src/wiggum/
     ├── LOOP-PROMPT.md
     ├── META-PROMPT.md
     ├── CONSOLIDATE-PROMPT.md
-    ├── TASKS.md
+    ├── TODO.md
     └── SPEC.md
 ```
 
@@ -50,7 +50,7 @@ src/wiggum/
 2. Sends meta-prompt to Claude via `run_claude_with_retry()` (runner.py)
 3. Parses Claude's response with `parse_markdown_from_output()` (parsing.py)
 4. Extracts suggested tasks and security constraints
-5. Writes `LOOP-PROMPT.md`, `TASKS.md`, `.wiggum.toml`
+5. Writes `LOOP-PROMPT.md`, `TODO.md`, `.wiggum.toml`
 6. Updates `.gitignore` with wiggum files
 
 ### `wiggum run`
@@ -60,7 +60,7 @@ src/wiggum/
 3. `resolve_run_config()` merges CLI flags over config values
 4. Git safety: checks dirty state → stash/commit/abort → creates branch
 5. Loop: for each iteration:
-   - `tasks_remaining()` checks for unchecked `- [ ]` in TASKS.md
+   - `tasks_remaining()` checks for unchecked `- [ ]` in TODO.md
    - `get_agent()` returns agent instance from registry
    - `agent.run(AgentConfig)` executes subprocess
    - Output printed, optionally logged

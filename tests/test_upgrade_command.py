@@ -251,10 +251,10 @@ class TestConfigUpgrade:
 
 
 class TestTasksUpgrade:
-    """Test TASKS.md upgrade logic."""
+    """Test TODO.md upgrade logic."""
 
     def test_tasks_file_needs_upgrade_missing_sections(self) -> None:
-        """Test detection of missing sections in TASKS.md."""
+        """Test detection of missing sections in TODO.md."""
         from wiggum.upgrade import tasks_file_needs_upgrade
 
         # Missing ## Todo section
@@ -266,7 +266,7 @@ class TestTasksUpgrade:
         assert tasks_file_needs_upgrade(content) is False
 
     def test_add_missing_sections(self) -> None:
-        """Test adding missing sections to TASKS.md."""
+        """Test adding missing sections to TODO.md."""
         from wiggum.upgrade import add_missing_task_sections
 
         content = "# Tasks\n\n## Done\n\n- [x] Task 1\n"

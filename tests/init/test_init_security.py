@@ -1,7 +1,6 @@
 """Tests for security constraint questions during init."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 from typer.testing import CliRunner
 
@@ -22,21 +21,17 @@ class TestInitSecurityQuestions:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            # Mock Claude to avoid actually calling it
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                # Input: doc files, task, empty line to end tasks, security choice (1=conservative), git (n)
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            # Input: doc files, task, empty line to end tasks, security choice (1=conservative), git (n)
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), (
@@ -52,20 +47,17 @@ class TestInitSecurityQuestions:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                # Choose conservative mode (option 1), git (n)
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            # Choose conservative mode (option 1), git (n)
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists()
@@ -80,20 +72,17 @@ class TestInitSecurityQuestions:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                # Choose path-restricted mode (option 2), provide paths, git (n)
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n2\nsrc/,tests/\nn\n",
-                )
+            # Choose path-restricted mode (option 2), provide paths, git (n)
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n2\nsrc/,tests/\nn\n",
+            )
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), f"Config not created. Output: {result.output}"
@@ -108,20 +97,17 @@ class TestInitSecurityQuestions:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                # Choose YOLO mode (option 3), git (n)
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n3\nn\n",
-                )
+            # Choose YOLO mode (option 3), git (n)
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n3\nn\n",
+            )
 
             config_file = Path(".wiggum.toml")
             assert config_file.exists(), f"Config not created. Output: {result.output}"
@@ -138,7 +124,7 @@ class TestRunReadsConfigFile:
             # Create config file with yolo mode
             Path(".wiggum.toml").write_text("[security]\nyolo = true\n")
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
 
             result = runner.invoke(app, ["run", "--dry-run"])
 
@@ -150,7 +136,7 @@ class TestRunReadsConfigFile:
             # Create config file with allowed paths
             Path(".wiggum.toml").write_text('[security]\nallow_paths = "src/,tests/"\n')
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
 
             result = runner.invoke(app, ["run", "--dry-run"])
 
@@ -163,7 +149,7 @@ class TestRunReadsConfigFile:
             # Create config file with conservative mode
             Path(".wiggum.toml").write_text("[security]\nyolo = false\n")
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
 
             # Pass --yolo flag to override config
             result = runner.invoke(app, ["run", "--dry-run", "--yolo"])
@@ -174,7 +160,7 @@ class TestRunReadsConfigFile:
         """Run command works when no config file exists."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
             Path("LOOP-PROMPT.md").write_text("Test prompt")
-            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
+            Path("TODO.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
 
             # Should not error out
             result = runner.invoke(app, ["run", "--dry-run"])
@@ -192,19 +178,16 @@ class TestSecurityModeDisplay:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             # Check that security options are displayed
             assert "conservative" in result.output.lower() or "1)" in result.output
@@ -222,27 +205,24 @@ class TestInitUpdatesGitignore:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
             # Create existing .gitignore
             Path(".gitignore").write_text("node_modules/\n.env\n")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             assert result.exit_code == 0, f"Init failed: {result.output}"
             gitignore_content = Path(".gitignore").read_text()
             assert ".wiggum/" in gitignore_content
             assert "LOOP-PROMPT.md" in gitignore_content
-            assert "TASKS.md" in gitignore_content
+            assert "TODO.md" not in gitignore_content  # TODO.md is tracked in git
             assert ".wiggum.toml" in gitignore_content
 
     def test_init_preserves_existing_gitignore_entries(self, tmp_path: Path) -> None:
@@ -252,21 +232,18 @@ class TestInitUpdatesGitignore:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
             # Create existing .gitignore
             Path(".gitignore").write_text("node_modules/\n.env\n")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             assert result.exit_code == 0
             gitignore_content = Path(".gitignore").read_text()
@@ -280,30 +257,26 @@ class TestInitUpdatesGitignore:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
             # Create .gitignore with all wiggum entries already present
             Path(".gitignore").write_text(
-                ".wiggum/\nLOOP-PROMPT.md\nTASKS.md\n.wiggum.toml\nnode_modules/\n"
+                ".wiggum/\nLOOP-PROMPT.md\n.wiggum.toml\nnode_modules/\n"
             )
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             assert result.exit_code == 0
             gitignore_content = Path(".gitignore").read_text()
             # Each should appear only once
             assert gitignore_content.count(".wiggum/") == 1
             assert gitignore_content.count("LOOP-PROMPT.md") == 1
-            assert gitignore_content.count("TASKS.md") == 1
             assert gitignore_content.count(".wiggum.toml") == 1
 
     def test_init_creates_gitignore_if_missing(self, tmp_path: Path) -> None:
@@ -313,24 +286,21 @@ class TestInitUpdatesGitignore:
             (Path("templates") / "LOOP-PROMPT.md").write_text(
                 "## Goal\n\n{{goal}}\n\n## Workflow\n"
             )
-            (Path("templates") / "TASKS.md").write_text(
+            (Path("templates") / "TODO.md").write_text(
                 "# Tasks\n\n## Todo\n\n{{tasks}}\n"
             )
             (Path("templates") / "META-PROMPT.md").write_text("Analyze {{goal}}")
 
-            with patch(
-                "wiggum.runner.run_claude_for_planning", return_value=(None, None)
-            ):
-                result = runner.invoke(
-                    app,
-                    ["init"],
-                    input="README.md\nTask 1\n\n1\nn\n",
-                )
+            result = runner.invoke(
+                app,
+                ["init"],
+                input="README.md\nTask 1\n\n1\nn\n",
+            )
 
             assert result.exit_code == 0
             assert Path(".gitignore").exists()
             gitignore_content = Path(".gitignore").read_text()
             assert ".wiggum/" in gitignore_content
             assert "LOOP-PROMPT.md" in gitignore_content
-            assert "TASKS.md" in gitignore_content
+            assert "TODO.md" not in gitignore_content  # TODO.md is tracked in git
             assert ".wiggum.toml" in gitignore_content

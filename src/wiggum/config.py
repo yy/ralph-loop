@@ -17,7 +17,7 @@ CONFIG_SCHEMA: dict[str, dict[str, tuple]] = {
         "max_iterations": (10, int),
         "agent": ("claude", str),
         "keep_running": (False, bool),
-        "tasks_file": ("TASKS.md", str),
+        "tasks_file": ("TODO.md", str),
         "prompt_file": ("LOOP-PROMPT.md", str),
     },
     "git": {
@@ -264,7 +264,18 @@ def resolve_run_config(
         resolved_max_iterations = loop_config.get("max_iterations", 10)
     resolved_tasks_file = tasks_file
     if tasks_file is None:
-        resolved_tasks_file = Path(loop_config.get("tasks_file", "TASKS.md"))
+        resolved_tasks_file = Path(loop_config.get("tasks_file", "TODO.md"))
+    # Backward compat: fall back to TASKS.md if TODO.md doesn't exist
+    if not resolved_tasks_file.exists() and Path("TASKS.md").exists():
+        import warnings
+
+        warnings.warn(
+            "TASKS.md is deprecated, rename to TODO.md "
+            "(run 'wiggum upgrade' to migrate)",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        resolved_tasks_file = Path("TASKS.md")
     resolved_prompt_file = prompt_file
     if prompt_file is None:
         config_prompt_file = loop_config.get("prompt_file")

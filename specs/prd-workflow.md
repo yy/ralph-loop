@@ -2,7 +2,7 @@
 
 ## Problem
 
-Simple tasks work well with TASKS.md, but complex features need:
+Simple tasks work well with TODO.md, but complex features need:
 - Detailed requirements
 - Edge cases
 - Acceptance criteria
@@ -16,7 +16,7 @@ Currently there's no standard way to provide this context to the agent.
 
 ```
 project/
-├── TASKS.md           # Task list (simple descriptions)
+├── TODO.md           # Task list (simple descriptions)
 ├── LOOP-PROMPT.md     # Agent instructions
 ├── specs/             # Detailed specs for complex tasks
 │   ├── feature-a.md
@@ -42,7 +42,7 @@ Add to workflow:
 ```markdown
 ## Workflow
 
-1. Read TASKS.md to see the current task list
+1. Read TODO.md to see the current task list
 2. Choose the most important task
 3. **If task references a spec file, read it first**
 4. ...
@@ -80,8 +80,8 @@ wiggum specs
 
 ## Alternative Considered
 
-**Inline specs in TASKS.md**: Rejected because:
-- Makes TASKS.md unwieldy
+**Inline specs in TODO.md**: Rejected because:
+- Makes TODO.md unwieldy
 - Hard to version/review specs separately
 - No clear ownership per feature
 

@@ -207,9 +207,7 @@ marimo/_lsp/
 __marimo__/
 
 # wiggum generated files (root level only)
-/TASKS.md
 /LOOP-PROMPT.md
-/DONE.md
 /.wiggum.toml
 
 # Claude Code local settings
