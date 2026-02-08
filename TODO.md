@@ -10,3 +10,8 @@
 - [x] Implement git safety feature (see specs/git-safety.md)
 - [x] Add PRD/spec workflow support (see specs/prd-workflow.md)
 - [x] git-ignoring wiggum files when init
+- [ ] **Test the `spec` command** - It's the only command with zero test coverage. Tests for creation, overwrite protection, `--force`, placeholder substitution, and directory creation.
+- [ ] **Add `wiggum specs` list command** - The `prd-workflow.md` spec calls for this but it was never implemented. Lists spec files and shows which tasks reference them.
+- [ ] **Unit tests for `runner.py`** - The retry logic, planning failures, and file change parsing have no dedicated tests (only indirect coverage through integration tests).
+- [ ] **Split cli.py into subcommand modules** - At 1,545 lines it's the largest file by far. Breaking it into `cli_run.py`, `cli_init.py`, etc. improves maintainability.
+- [ ] **`--timeout` flag for `wiggum run`** - No protection against hung agent iterations. A timeout kills the subprocess after N seconds.
