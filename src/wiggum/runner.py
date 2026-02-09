@@ -85,6 +85,10 @@ def run_claude_for_planning(meta_prompt: str) -> Tuple[Optional[str], Optional[s
         text=True,
         check=False,
     )
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()
+        detail = f": {stderr}" if stderr else ""
+        return None, f"Claude planning command failed with exit code {result.returncode}{detail}"
     return result.stdout, None
 
 

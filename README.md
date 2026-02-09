@@ -134,7 +134,7 @@ Settings are stored in `.wiggum.toml`:
 
 ```toml
 [security]
-yolo = true           # Skip permission prompts (default: true)
+yolo = false          # Skip permission prompts (default: false)
 allow_paths = ""      # Comma-separated paths to allow writing
 
 [loop]

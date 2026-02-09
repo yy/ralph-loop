@@ -418,6 +418,31 @@ class TestChangelogCommand:
         assert result.exit_code == 0
         assert "No completed tasks" in result.output
 
+    def test_checked_tasks_outside_done_are_ignored(self, tmp_path: Path) -> None:
+        """Only checked tasks in the Done section should be used."""
+        tasks_file = tmp_path / "TASKS.md"
+        tasks_file.write_text(
+            "# Tasks\n\n## Done\n\n## Todo\n\n- [x] Checked in todo\n- [ ] Pending\n"
+        )
+        output_file = tmp_path / "CHANGELOG.md"
+
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(
+                app,
+                [
+                    "changelog",
+                    "--tasks-file",
+                    str(tasks_file),
+                    "--output",
+                    str(output_file),
+                    "--force",
+                ],
+            )
+
+        assert result.exit_code == 0
+        assert "No completed tasks" in result.output
+        assert not output_file.exists()
+
     def test_missing_tasks_file_error(self, tmp_path: Path) -> None:
         """Shows error when tasks file doesn't exist."""
         with runner.isolated_filesystem(temp_dir=tmp_path):

@@ -177,6 +177,28 @@ class TestUpgradeCommand:
         finally:
             os.chdir(original_cwd)
 
+    def test_upgrade_config_uses_secure_keep_diary_default(self, tmp_path: Path) -> None:
+        """Config upgrade should default learning.keep_diary to false."""
+        import os
+
+        original_cwd = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            prompt_file = tmp_path / "LOOP-PROMPT.md"
+            prompt_file.write_text("<!-- wiggum-template: 0.9.0 -->")
+
+            config_file = tmp_path / ".wiggum.toml"
+            config_file.write_text("[security]\nyolo = false\n")
+
+            result = runner.invoke(app, ["upgrade", "config", "--force"])
+
+            assert result.exit_code == 0
+            config_content = config_file.read_text()
+            assert "[learning]" in config_content
+            assert "keep_diary = false" in config_content
+        finally:
+            os.chdir(original_cwd)
+
     def test_upgrade_invalid_target(self, tmp_path: Path) -> None:
         """Test that invalid target shows error."""
         import os

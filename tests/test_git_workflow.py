@@ -77,6 +77,18 @@ class TestGitSafetyDryRun:
         assert result.exit_code == 0
         assert "Branch prefix: wiggum" in result.output
 
+    def test_dry_run_shows_agent_specific_command_for_codex(
+        self, tmp_path: Path
+    ) -> None:
+        """Dry-run should show codex command when --agent codex is selected."""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            Path("LOOP-PROMPT.md").write_text("Test prompt")
+            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Test task\n")
+            result = runner.invoke(app, ["run", "--dry-run", "--agent", "codex"])
+
+        assert result.exit_code == 0
+        assert "Command: codex --json <prompt>" in result.output
+
 
 class TestGitSafetyConfig:
     """Tests for git safety configuration resolution."""
