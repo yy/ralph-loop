@@ -40,6 +40,25 @@ wiggum init
 wiggum run
 ```
 
+## Development
+
+```bash
+# Install dependencies
+make sync
+
+# Run tests
+make test
+
+# Clean stale build artifacts (dist/, dist.*, build/, *.egg-info)
+make clean-build
+
+# Build package
+make build
+
+# Publish to PyPI (expects PYPI_TOKEN in env, e.g. from ~/.zshrc.local)
+make publish
+```
+
 ## How It Works
 
 1. `init` creates `LOOP-PROMPT.md` (workflow) and `TODO.md` (task list)
