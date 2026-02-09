@@ -2,7 +2,6 @@
 
 ## Todo
 
-- [ ] Add subprocess timeout handling for agent and git calls to prevent infinite hangs
 - [ ] Validate spec file references in tasks — warn when a task references a non-existent spec
 - [ ] Handle branch name collisions in `generate_branch_name()` by checking existence and appending a counter
 - [ ] Split `cli.py` (1400+ lines) into per-command modules under a `commands/` package
@@ -19,4 +18,4 @@
 - [ ] **Add `wiggum specs` list command** - The `prd-workflow.md` spec calls for this but it was never implemented. Lists spec files and shows which tasks reference them.
 - [ ] **Unit tests for `runner.py`** - The retry logic, planning failures, and file change parsing have no dedicated tests (only indirect coverage through integration tests).
 - [ ] **Split cli.py into subcommand modules** - At 1,545 lines it's the largest file by far. Breaking it into `cli_run.py`, `cli_init.py`, etc. improves maintainability.
-- [ ] **`--timeout` flag for `wiggum run`** - No protection against hung agent iterations. A timeout kills the subprocess after N seconds.
+- [x] **`--timeout` flag for `wiggum run`** - Added timeout propagation to agent subprocess calls, plus timeout handling for git/planning subprocesses.

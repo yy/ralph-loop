@@ -1,5 +1,6 @@
 """Tests for planning command execution in runner utilities."""
 
+import subprocess
 from unittest.mock import MagicMock, patch
 
 from wiggum.runner import run_claude_for_planning
@@ -31,3 +32,15 @@ class TestRunClaudeForPlanning:
 
         assert output == "ok"
         assert error is None
+
+    @patch("wiggum.runner.check_cli_available", return_value=True)
+    @patch("wiggum.runner.subprocess.run")
+    def test_returns_error_on_timeout(self, mock_run, _mock_check_cli) -> None:
+        """Returns timeout error details when Claude planning hangs."""
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="claude", timeout=60)
+
+        output, error = run_claude_for_planning("meta prompt", timeout_seconds=60)
+
+        assert output is None
+        assert error is not None
+        assert "timed out" in error

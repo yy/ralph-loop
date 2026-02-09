@@ -7,6 +7,7 @@ These tests verify that all agents (claude, codex, gemini):
 4. Handle errors appropriately
 """
 
+import subprocess
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -124,6 +125,16 @@ class TestAgentResult:
             result = agent.run(AgentConfig(prompt="test"))
             assert result.stderr == ""
 
+    def test_passes_timeout_to_subprocess(
+        self, name: str, agent_class: type, subprocess_path: str
+    ):
+        """run() should pass timeout_seconds to subprocess.run."""
+        with patch(subprocess_path) as mock_run:
+            mock_run.return_value = MagicMock(stdout="", stderr="", returncode=0)
+            agent = agent_class()
+            agent.run(AgentConfig(prompt="test", timeout_seconds=42))
+            assert mock_run.call_args.kwargs["timeout"] == 42
+
 
 @pytest.mark.parametrize(
     "name,agent_class,subprocess_path",
@@ -146,6 +157,17 @@ class TestAgentErrorHandling:
             assert result.return_code == 1
             assert "not found" in result.stderr.lower()
             assert result.stdout == ""
+
+    def test_handles_timeout(
+        self, name: str, agent_class: type, subprocess_path: str
+    ):
+        """Should return timeout error result when subprocess exceeds timeout."""
+        with patch(subprocess_path) as mock_run:
+            mock_run.side_effect = subprocess.TimeoutExpired(cmd=name, timeout=5)
+            agent = agent_class()
+            result = agent.run(AgentConfig(prompt="test", timeout_seconds=5))
+            assert result.return_code == 124
+            assert "timed out" in result.stderr.lower()
 
 
 class TestAgentRegistry:

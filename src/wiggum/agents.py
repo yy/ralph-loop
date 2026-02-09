@@ -73,6 +73,7 @@ class AgentConfig:
     yolo: bool = False
     allow_paths: Optional[str] = None
     continue_session: bool = False
+    timeout_seconds: Optional[int] = None
 
 
 @runtime_checkable

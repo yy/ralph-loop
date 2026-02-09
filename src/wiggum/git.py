@@ -4,6 +4,9 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
+DEFAULT_GIT_TIMEOUT_SECONDS = 120
+DEFAULT_GH_TIMEOUT_SECONDS = 120
+
 
 class GitError(Exception):
     """Raised when a git operation fails."""
@@ -12,7 +15,10 @@ class GitError(Exception):
 
 
 def _run_git(
-    args: list[str], cwd: Optional[Path] = None, check: bool = True
+    args: list[str],
+    cwd: Optional[Path] = None,
+    check: bool = True,
+    timeout: int = DEFAULT_GIT_TIMEOUT_SECONDS,
 ) -> subprocess.CompletedProcess[str]:
     """Run a git command.
 
@@ -20,6 +26,7 @@ def _run_git(
         args: Git command arguments (without 'git' prefix).
         cwd: Working directory. Defaults to current directory.
         check: Whether to raise GitError on non-zero exit code.
+        timeout: Timeout in seconds for the git command.
 
     Returns:
         CompletedProcess result.
@@ -27,12 +34,19 @@ def _run_git(
     Raises:
         GitError: If check=True and command fails.
     """
-    result = subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise GitError(
+            f"Git command timed out after {timeout}s: git {' '.join(args)}"
+        ) from exc
+
     if check and result.returncode != 0:
         raise GitError(f"Git command failed: git {' '.join(args)}\n{result.stderr}")
     return result
@@ -277,12 +291,18 @@ def create_pr(
 
     args = ["gh", "pr", "create", "--title", title, "--body", body, "--base", base]
 
-    result = subprocess.run(
-        args,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            args,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=DEFAULT_GH_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise GitError(
+            f"Failed to create PR: gh command timed out after {DEFAULT_GH_TIMEOUT_SECONDS}s"
+        ) from exc
 
     if result.returncode != 0:
         raise GitError(f"Failed to create PR: {result.stderr}")

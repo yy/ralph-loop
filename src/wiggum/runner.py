@@ -7,6 +7,8 @@ from typing import Optional, Tuple
 from wiggum.agents import check_cli_available, get_cli_error_message
 from wiggum.parsing import parse_markdown_from_output
 
+CLAUDE_PLANNING_TIMEOUT_SECONDS = 180
+GIT_STATUS_TIMEOUT_SECONDS = 10
 
 RETRY_PROMPT_TEMPLATE = """Your previous response could not be parsed. Please respond again using this exact format:
 
@@ -64,7 +66,9 @@ def run_claude_with_retry(
     return None, f"Could not parse Claude's response after {max_retries} attempts"
 
 
-def run_claude_for_planning(meta_prompt: str) -> Tuple[Optional[str], Optional[str]]:
+def run_claude_for_planning(
+    meta_prompt: str, timeout_seconds: int = CLAUDE_PLANNING_TIMEOUT_SECONDS
+) -> Tuple[Optional[str], Optional[str]]:
     """Run Claude with meta prompt and return output.
 
     Args:
@@ -79,12 +83,17 @@ def run_claude_for_planning(meta_prompt: str) -> Tuple[Optional[str], Optional[s
     if not check_cli_available("claude"):
         return None, get_cli_error_message("claude")
 
-    result = subprocess.run(
-        ["claude", "--print", "-p", meta_prompt],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        result = subprocess.run(
+            ["claude", "--print", "-p", meta_prompt],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired:
+        return None, f"Claude planning command timed out after {timeout_seconds}s"
+
     if result.returncode != 0:
         stderr = (result.stderr or "").strip()
         detail = f": {stderr}" if stderr else ""
@@ -105,6 +114,7 @@ def get_file_changes() -> tuple[bool, str]:
             capture_output=True,
             text=True,
             check=False,
+            timeout=GIT_STATUS_TIMEOUT_SECONDS,
         )
         if result.returncode != 0:
             return False, "Not a git repository - progress tracking unavailable"
@@ -149,6 +159,8 @@ def get_file_changes() -> tuple[bool, str]:
         return True, "\n".join(parts) if parts else "No file changes"
     except FileNotFoundError:
         return False, "Git not found - progress tracking unavailable"
+    except subprocess.TimeoutExpired:
+        return False, "git status timed out - progress tracking unavailable"
 
 
 def write_log_entry(log_file: Path, iteration: int, output: str) -> None:

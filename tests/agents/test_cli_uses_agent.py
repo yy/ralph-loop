@@ -223,6 +223,46 @@ class TestCliUsesAgentAbstraction:
         config = mock_agent.run.call_args[0][0]
         assert config.allow_paths == "src/,tests/"
 
+    def test_agent_config_has_timeout_setting(self, tmp_path: Path) -> None:
+        """The AgentConfig should include timeout from CLI."""
+        prompt_file = tmp_path / "LOOP-PROMPT.md"
+        prompt_file.write_text("test prompt")
+        tasks_file = tmp_path / "TODO.md"
+        tasks_file.write_text("# Tasks\n\n## Todo\n\n- [ ] task1\n")
+
+        mock_agent = MagicMock()
+        mock_agent.name = "claude"
+
+        def complete_task(config):
+            tasks_file.write_text("# Tasks\n\n## Done\n\n- [x] task1\n")
+            return AgentResult(stdout="done", stderr="", return_code=0)
+
+        mock_agent.run.side_effect = complete_task
+
+        with patch("wiggum.agents.check_cli_available", return_value=True):
+
+            with patch("wiggum.cli.get_agent", return_value=mock_agent):
+
+                runner.invoke(
+                    app,
+                    [
+                        "run",
+                        "-f",
+                        str(prompt_file),
+                        "--tasks",
+                        str(tasks_file),
+                        "-n",
+                        "1",
+                        "--timeout",
+                        "25",
+                        "--force",
+                        "--no-branch",
+                    ],
+                )
+
+        config = mock_agent.run.call_args[0][0]
+        assert config.timeout_seconds == 25
+
     def test_agent_config_continue_session_on_subsequent_iterations(
         self, tmp_path: Path
     ) -> None:

@@ -19,6 +19,7 @@ CONFIG_SCHEMA: dict[str, dict[str, tuple]] = {
         "keep_running": (False, bool),
         "tasks_file": ("TODO.md", str),
         "prompt_file": ("LOOP-PROMPT.md", str),
+        "timeout": (1800, int),
     },
     "git": {
         "enabled": (False, bool),
@@ -150,6 +151,7 @@ class ResolvedRunConfig:
     yolo: bool
     allow_paths: Optional[str]
     max_iterations: int
+    timeout: int
     tasks_file: Path
     prompt_file: Optional[Path]
     agent: Optional[str]
@@ -191,6 +193,7 @@ def resolve_run_config(
     yolo: Optional[bool],
     allow_paths: Optional[str],
     max_iterations: Optional[int],
+    timeout: Optional[int] = None,
     tasks_file: Optional[Path],
     prompt_file: Optional[Path],
     agent: Optional[str],
@@ -219,6 +222,7 @@ def resolve_run_config(
         yolo: CLI --yolo/--no-yolo flag value (None means not specified)
         allow_paths: CLI --allow-paths value
         max_iterations: CLI -n/--max-iterations value
+        timeout: CLI --timeout value (seconds)
         tasks_file: CLI --tasks value
         prompt_file: CLI -f/--file value
         agent: CLI --agent value
@@ -263,6 +267,11 @@ def resolve_run_config(
     resolved_max_iterations = max_iterations
     if max_iterations is None:
         resolved_max_iterations = loop_config.get("max_iterations", 10)
+    resolved_timeout = timeout
+    if timeout is None:
+        resolved_timeout = loop_config.get("timeout", 1800)
+    if resolved_timeout <= 0:
+        raise ValueError("--timeout must be a positive integer")
     resolved_tasks_file = tasks_file
     if tasks_file is None:
         resolved_tasks_file = Path(loop_config.get("tasks_file", "TODO.md"))
@@ -353,6 +362,7 @@ def resolve_run_config(
         yolo=resolved_yolo,
         allow_paths=resolved_allow_paths,
         max_iterations=resolved_max_iterations,
+        timeout=resolved_timeout,
         tasks_file=resolved_tasks_file,
         prompt_file=resolved_prompt_file,
         agent=resolved_agent,

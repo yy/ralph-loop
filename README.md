@@ -66,6 +66,7 @@ wiggum run                    # Run with defaults
 wiggum run -n 5               # Max 5 iterations
 wiggum run --continue         # Keep context between iterations
 wiggum run --keep-running     # Continue when tasks complete (agent can add new)
+wiggum run --timeout 900      # Kill hung agent calls after 15 minutes
 wiggum run --identify-tasks   # Analyze codebase, populate TODO.md, then exit
 wiggum run --no-yolo          # Ask for permissions
 wiggum run -v                 # Show git status after each iteration
@@ -139,6 +140,7 @@ allow_paths = ""      # Comma-separated paths to allow writing
 
 [loop]
 max_iterations = 10   # Default iteration limit
+timeout = 1800        # Per-iteration agent timeout in seconds
 
 [git]
 enabled = false       # Enable git workflow

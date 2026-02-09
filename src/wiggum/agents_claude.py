@@ -36,11 +36,28 @@ class ClaudeAgent:
                 cmd.extend(["--allowedTools", f"Write:{path.strip()}*"])
 
         try:
-            result = subprocess.run(cmd, check=False, capture_output=True, text=True)
+            result = subprocess.run(
+                cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=config.timeout_seconds,
+            )
             return AgentResult(
                 stdout=result.stdout or "",
                 stderr=result.stderr or "",
                 return_code=result.returncode,
+            )
+        except subprocess.TimeoutExpired:
+            timeout = (
+                f"{config.timeout_seconds}s"
+                if config.timeout_seconds is not None
+                else "the configured limit"
+            )
+            return AgentResult(
+                stdout="",
+                stderr=f"Error: Claude command timed out after {timeout}",
+                return_code=124,
             )
         except FileNotFoundError:
             return AgentResult(

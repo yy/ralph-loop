@@ -61,6 +61,7 @@ Settings are stored in `.wiggum.toml` and read by the `run` command:
 
 **[loop] section:**
 - `max_iterations`: Default number of loop iterations (default: 10)
+- `timeout`: Per-iteration agent timeout in seconds (default: 1800)
 - `agent`: Which agent to use (default: "claude"). Options: claude, codex, gemini
 
 **[git] section:**

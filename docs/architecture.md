@@ -81,7 +81,7 @@ class Agent(Protocol):
     def run(self, config: AgentConfig) -> AgentResult: ...
 ```
 
-`AgentConfig` carries: prompt, yolo, allow_paths, continue_session.
+`AgentConfig` carries: prompt, yolo, allow_paths, continue_session, timeout_seconds.
 `AgentResult` returns: stdout, stderr, return_code.
 
 Agents are registered in `agents.py` `_agents` dict. Adding a new agent:

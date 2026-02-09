@@ -46,6 +46,7 @@ def restore_cwd():
             "MY-PROMPT.md",
         ),
         ('[loop]\nagent = "codex"\n', "loop", "agent", "codex"),
+        ("[loop]\ntimeout = 45\n", "loop", "timeout", 45),
         # [output] section
         ('[output]\nlog_file = "loop.log"\n', "output", "log_file", "loop.log"),
         ("[output]\nverbose = true\n", "output", "verbose", True),
@@ -59,6 +60,7 @@ def restore_cwd():
         "loop-tasks_file",
         "loop-prompt_file",
         "loop-agent",
+        "loop-timeout",
         "output-log_file",
         "output-verbose-true",
         "output-verbose-false",
@@ -124,6 +126,11 @@ continue_session = true
             "[loop]",
             'agent = "codex"',
         ),
+        (
+            {"security": {"yolo": False}, "loop": {"timeout": 900}},
+            "[loop]",
+            "timeout = 900",
+        ),
         # [output] section
         (
             {"security": {"yolo": False}, "output": {"verbose": True}},
@@ -150,6 +157,7 @@ continue_session = true
     ids=[
         "loop-max_iterations",
         "loop-agent",
+        "loop-timeout",
         "output-verbose",
         "output-log_file",
         "session-continue-true",
@@ -233,6 +241,33 @@ class TestRunCommandConfig:
 
         assert "5 iterations" in result.output
         assert result.exit_code == 0
+
+    def test_timeout_from_config(self, tmp_path: Path) -> None:
+        """run uses timeout from config."""
+        self._setup_project(tmp_path, "[loop]\ntimeout = 120\n")
+
+        result = runner.invoke(app, ["run", "--dry-run"])
+
+        assert "Timeout: 120s per iteration" in result.output
+        assert result.exit_code == 0
+
+    def test_timeout_cli_overrides_config(self, tmp_path: Path) -> None:
+        """CLI --timeout flag overrides config."""
+        self._setup_project(tmp_path, "[loop]\ntimeout = 999\n")
+
+        result = runner.invoke(app, ["run", "--dry-run", "--timeout", "15"])
+
+        assert "Timeout: 15s per iteration" in result.output
+        assert result.exit_code == 0
+
+    def test_timeout_must_be_positive(self, tmp_path: Path) -> None:
+        """run fails when timeout is not positive."""
+        self._setup_project(tmp_path)
+
+        result = runner.invoke(app, ["run", "--dry-run", "--timeout", "0"])
+
+        assert result.exit_code == 1
+        assert "positive" in result.output.lower()
 
     # --- tasks_file tests ---
 

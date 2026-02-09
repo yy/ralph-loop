@@ -175,6 +175,11 @@ def run(
     max_iterations: Optional[int] = typer.Option(
         None, "-n", "--max-iterations", help="Max iterations"
     ),
+    timeout: Optional[int] = typer.Option(
+        None,
+        "--timeout",
+        help="Per-iteration agent timeout in seconds (default: from config, else 1800)",
+    ),
     agent: Optional[str] = typer.Option(
         None,
         "--agent",
@@ -292,6 +297,7 @@ def run(
             yolo=yolo,
             allow_paths=allow_paths,
             max_iterations=max_iterations,
+            timeout=timeout,
             tasks_file=tasks_file,
             prompt_file=prompt_file,
             agent=agent,
@@ -347,6 +353,7 @@ def run(
         cmd = _build_dry_run_command(agent_name, cfg.yolo, cfg.allow_paths)
         typer.echo(f"Would run {cfg.max_iterations} iterations")
         typer.echo(f"Agent: {agent_name}")
+        typer.echo(f"Timeout: {cfg.timeout}s per iteration")
         typer.echo(f"Command: {' '.join(cmd)}")
         typer.echo(f"Stop condition: tasks (check {cfg.tasks_file})")
         if cfg.keep_running:
@@ -496,6 +503,7 @@ def run(
             allow_paths=cfg.allow_paths,
             # After first iteration, continue session if requested
             continue_session=cfg.continue_session and i > 1,
+            timeout_seconds=cfg.timeout,
         )
 
         # Debug output before agent starts
@@ -782,6 +790,7 @@ def init(
             },
             "loop": {
                 "max_iterations": 10,
+                "timeout": 1800,
             },
             "git": {
                 "enabled": git_enabled,

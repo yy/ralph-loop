@@ -128,6 +128,14 @@ class TestGetCurrentBranch:
 
         assert get_current_branch(tmp_path) == "main"
 
+    @patch("wiggum.git.subprocess.run")
+    def test_raises_on_timeout(self, mock_run: MagicMock, tmp_path: Path) -> None:
+        """Raises GitError when git command times out."""
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="git", timeout=120)
+
+        with pytest.raises(GitError, match="timed out"):
+            get_current_branch(tmp_path)
+
 
 class TestCreateBranch:
     """Tests for create_branch function."""
@@ -263,4 +271,12 @@ class TestCreatePr:
         )
 
         with pytest.raises(GitError, match="Failed to create PR"):
+            create_pr(title="Test PR", body="Test body", base="main", cwd=tmp_path)
+
+    @patch("subprocess.run")
+    def test_raises_on_timeout(self, mock_run: MagicMock, tmp_path: Path) -> None:
+        """Raises GitError when gh command times out."""
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="gh", timeout=120)
+
+        with pytest.raises(GitError, match="timed out"):
             create_pr(title="Test PR", body="Test body", base="main", cwd=tmp_path)
