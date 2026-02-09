@@ -8,11 +8,17 @@ from typing import Optional
 # Config schema - all known config options with defaults
 WIGGUM_CONFIG_DEFAULTS = {
     "security": {"yolo": False, "allow_paths": ""},
-    "loop": {"max_iterations": 10, "agent": "claude", "keep_running": False},
-    "git": {"enabled": False, "branch_prefix": "wiggum"},
-    "output": {"verbose": False},
+    "loop": {
+        "max_iterations": 10,
+        "agent": "claude",
+        "keep_running": False,
+        "tasks_file": "TASKS.md",
+        "prompt_file": "LOOP-PROMPT.md",
+    },
+    "git": {"enabled": False, "branch_prefix": "wiggum", "auto_pr": False},
+    "output": {"verbose": False, "log_file": ""},
     "session": {"continue_session": False},
-    "learning": {"enabled": True, "keep_diary": True, "auto_consolidate": True},
+    "learning": {"enabled": True, "keep_diary": False, "auto_consolidate": True},
 }
 
 

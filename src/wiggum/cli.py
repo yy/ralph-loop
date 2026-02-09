@@ -131,6 +131,37 @@ def _ensure_learning_diary_dir() -> None:
     ensure_diary_dir()
 
 
+def _build_dry_run_command(agent_name: str, yolo: bool, allow_paths: Optional[str]) -> list[str]:
+    """Build a representative command for dry-run output."""
+    if agent_name == "codex":
+        cmd = ["codex", "--json", "<prompt>"]
+        if yolo:
+            cmd.insert(1, "--yolo")
+        if allow_paths:
+            for path in allow_paths.split(","):
+                cmd.insert(1, path.strip())
+                cmd.insert(1, "--add-dir")
+        return cmd
+
+    if agent_name == "gemini":
+        cmd = ["gemini", "-p", "<prompt>"]
+        if yolo:
+            cmd.append("--yolo")
+        if allow_paths:
+            cmd.extend(["--include-directories", allow_paths])
+        return cmd
+
+    # Default to Claude-style command
+    cmd = ["claude", "--print", "-p", "<prompt>"]
+    if yolo:
+        cmd.append("--dangerously-skip-permissions")
+    if allow_paths:
+        for path in allow_paths.split(","):
+            cmd.extend(["--allowedTools", f"Edit:{path.strip()}*"])
+            cmd.extend(["--allowedTools", f"Write:{path.strip()}*"])
+    return cmd
+
+
 @app.command()
 def run(
     prompt_file: Optional[Path] = typer.Option(
@@ -149,10 +180,10 @@ def run(
         "--agent",
         help="Agent to use (e.g., 'claude', 'codex', 'gemini')",
     ),
-    yolo: bool = typer.Option(
-        True,
+    yolo: Optional[bool] = typer.Option(
+        None,
         "--yolo/--no-yolo",
-        help="Skip all permission prompts (default: enabled)",
+        help="Skip all permission prompts (default: from config, else disabled)",
     ),
     allow_paths: Optional[str] = typer.Option(
         None,
@@ -313,13 +344,7 @@ def run(
             raise typer.Exit(1)
 
     if dry_run:
-        cmd = ["claude", "--print", "-p", "<prompt>"]
-        if cfg.yolo:
-            cmd.append("--dangerously-skip-permissions")
-        if cfg.allow_paths:
-            for path in cfg.allow_paths.split(","):
-                cmd.extend(["--allowedTools", f"Edit:{path.strip()}*"])
-                cmd.extend(["--allowedTools", f"Write:{path.strip()}*"])
+        cmd = _build_dry_run_command(agent_name, cfg.yolo, cfg.allow_paths)
         typer.echo(f"Would run {cfg.max_iterations} iterations")
         typer.echo(f"Agent: {agent_name}")
         typer.echo(f"Command: {' '.join(cmd)}")

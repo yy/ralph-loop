@@ -144,3 +144,21 @@ class TestPruneCommand:
             assert "Finished" not in content
 
         assert result.exit_code == 0
+
+    def test_prune_ignores_checked_tasks_outside_done_section(
+        self, tmp_path: Path
+    ) -> None:
+        """Checked tasks in non-Done sections should not be pruned."""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            Path("TASKS.md").write_text(
+                "# Tasks\n\n## Done\n\n## Todo\n\n- [x] Checked in todo\n- [ ] Pending\n"
+            )
+
+            result = runner.invoke(app, ["prune", "--force"])
+
+            content = Path("TASKS.md").read_text()
+            assert "Checked in todo" in content
+            assert "Pending" in content
+
+        assert result.exit_code == 0
+        assert "No completed tasks to remove" in result.output

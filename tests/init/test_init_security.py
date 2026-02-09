@@ -156,6 +156,28 @@ class TestRunReadsConfigFile:
 
             assert "--dangerously-skip-permissions" in result.output
 
+    def test_run_respects_config_yolo_false(self, tmp_path: Path) -> None:
+        """When config sets yolo=false, dry-run should not include danger flag."""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            Path(".wiggum.toml").write_text("[security]\nyolo = false\n")
+            Path("LOOP-PROMPT.md").write_text("Test prompt")
+            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
+
+            result = runner.invoke(app, ["run", "--dry-run"])
+
+            assert "--dangerously-skip-permissions" not in result.output
+
+    def test_run_no_yolo_flag_overrides_config_true(self, tmp_path: Path) -> None:
+        """--no-yolo should override config yolo=true."""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            Path(".wiggum.toml").write_text("[security]\nyolo = true\n")
+            Path("LOOP-PROMPT.md").write_text("Test prompt")
+            Path("TASKS.md").write_text("# Tasks\n\n## Todo\n\n- [ ] Task 1\n")
+
+            result = runner.invoke(app, ["run", "--dry-run", "--no-yolo"])
+
+            assert "--dangerously-skip-permissions" not in result.output
+
     def test_run_works_without_config_file(self, tmp_path: Path) -> None:
         """Run command works when no config file exists."""
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -166,6 +188,7 @@ class TestRunReadsConfigFile:
             result = runner.invoke(app, ["run", "--dry-run"])
 
             assert result.exit_code == 0
+            assert "--dangerously-skip-permissions" not in result.output
 
 
 class TestSecurityModeDisplay:

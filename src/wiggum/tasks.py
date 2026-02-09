@@ -25,6 +25,18 @@ def _find_tasks(content: str, pattern: re.Pattern[str]) -> list[str]:
     return [task.strip() for task in pattern.findall(content)]
 
 
+def _extract_section(content: str, section_name: str) -> str:
+    """Extract a markdown section body by heading name."""
+    pattern = re.compile(
+        rf"^##\s*{re.escape(section_name)}\s*$\n?(.*?)(?=^##\s+|\Z)",
+        re.MULTILINE | re.DOTALL,
+    )
+    match = pattern.search(content)
+    if not match:
+        return ""
+    return match.group(1)
+
+
 def tasks_remaining(tasks_file: Path = Path("TODO.md")) -> bool:
     """Check if there are incomplete tasks in TODO.md."""
     if not tasks_file.exists():
@@ -200,10 +212,11 @@ def get_all_tasks(tasks_file: Path = Path("TODO.md")) -> Optional[TaskList]:
 
     content = tasks_file.read_text()
 
-    # Find unchecked tasks: - [ ]
+    # Find unchecked tasks globally to preserve current behavior for current-task and stop checks.
     todo = _find_tasks(content, _TASK_TODO_PATTERN)
-    # Find checked tasks: - [x] or - [X]
-    done = _find_tasks(content, _TASK_DONE_PATTERN)
+    # Done tasks should come from the ## Done section only.
+    done_section = _extract_section(content, "Done")
+    done = _find_tasks(done_section, _TASK_DONE_PATTERN)
 
     return TaskList(
         todo=todo,

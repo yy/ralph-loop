@@ -188,7 +188,7 @@ def check_mutually_exclusive(
 
 def resolve_run_config(
     *,
-    yolo: bool,
+    yolo: Optional[bool],
     allow_paths: Optional[str],
     max_iterations: Optional[int],
     tasks_file: Optional[Path],
@@ -216,7 +216,7 @@ def resolve_run_config(
     ResolvedRunConfig with all values resolved.
 
     Args:
-        yolo: CLI --yolo flag value
+        yolo: CLI --yolo/--no-yolo flag value (None means not specified)
         allow_paths: CLI --allow-paths value
         max_iterations: CLI -n/--max-iterations value
         tasks_file: CLI --tasks value
@@ -251,9 +251,10 @@ def resolve_run_config(
     session_config = config.get("session", {})
 
     # Resolve security config (CLI flags override config)
-    resolved_yolo = yolo
-    if not yolo and security_config.get("yolo", False):
-        resolved_yolo = True
+    if yolo is None:
+        resolved_yolo = security_config.get("yolo", False)
+    else:
+        resolved_yolo = yolo
     resolved_allow_paths = allow_paths
     if allow_paths is None and security_config.get("allow_paths"):
         resolved_allow_paths = security_config.get("allow_paths")
