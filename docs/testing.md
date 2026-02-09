@@ -28,6 +28,7 @@ tests/
 ├── test_learning.py
 ├── test_list_command.py
 ├── test_prune_command.py
+├── test_runner_planning.py
 ├── test_suggest_command.py
 └── test_upgrade_command.py
 ```
@@ -115,3 +116,10 @@ Do NOT write tests for:
 - Anything where the "test" would just assert a string is present
 
 Rule of thumb: if you can't describe what behavior would regress without the test, skip it.
+
+## Recent regression coverage to preserve
+
+- `run` config/flag precedence for `yolo` (`--yolo`, `--no-yolo`, config fallback).
+- `changelog` and `prune` only treating `## Done` as completed-task source.
+- Dry-run command output reflecting selected agent (`claude`, `codex`, `gemini`).
+- Planning subprocess non-zero exits surfacing actionable errors (exit code + stderr).

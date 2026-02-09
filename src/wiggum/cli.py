@@ -183,7 +183,7 @@ def run(
     yolo: Optional[bool] = typer.Option(
         None,
         "--yolo/--no-yolo",
-        help="Skip all permission prompts (default: from config, else disabled)",
+        help="Skip all permission prompts (default: from config, else enabled)",
     ),
     allow_paths: Optional[str] = typer.Option(
         None,

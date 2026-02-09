@@ -188,7 +188,7 @@ class TestRunReadsConfigFile:
             result = runner.invoke(app, ["run", "--dry-run"])
 
             assert result.exit_code == 0
-            assert "--dangerously-skip-permissions" not in result.output
+            assert "--dangerously-skip-permissions" in result.output
 
 
 class TestSecurityModeDisplay:

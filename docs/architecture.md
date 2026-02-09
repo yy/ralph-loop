@@ -70,6 +70,8 @@ src/wiggum/
 
 CLI flags > `.wiggum.toml` values > hardcoded defaults (in `CONFIG_SCHEMA`)
 
+For `yolo`, CLI is tri-state: explicit `--yolo`/`--no-yolo` overrides config; if omitted, config/default is used (default is `true`).
+
 ## Agent protocol
 
 Every agent implements:
@@ -100,6 +102,13 @@ Within extracted content, tasks are found via:
 2. If no heading, search entire content with same priority
 
 This is in `parsing.py`. The retry logic in `runner.py` will re-prompt Claude up to 3 times if parsing fails.
+If the Claude planning subprocess exits non-zero, `runner.py` now returns an explicit error including exit code and stderr.
+
+## Task semantics
+
+- Stop condition (`tasks_remaining`): regex search for unchecked `- [ ]` anywhere in TODO.md.
+- Current task (`get_current_task`): first unchecked task anywhere in TODO.md.
+- Completed tasks for `prune`/`changelog` (`get_all_tasks.done`): checked tasks scoped to the `## Done` section.
 
 ## Key patterns
 

@@ -2,6 +2,11 @@
 
 ## Todo
 
+- [ ] Add subprocess timeout handling for agent and git calls to prevent infinite hangs
+- [ ] Validate spec file references in tasks — warn when a task references a non-existent spec
+- [ ] Handle branch name collisions in `generate_branch_name()` by checking existence and appending a counter
+- [ ] Split `cli.py` (1400+ lines) into per-command modules under a `commands/` package
+
 ## Done
 - [x] create docs directory and document important information about the project as a knowledge base / context for future coding agent sessions
 - [x] Add a docstring to the `spec` command in cli.py explaining what it does

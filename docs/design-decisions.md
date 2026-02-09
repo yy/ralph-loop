@@ -40,9 +40,15 @@ Decisions that have been made and should not be re-litigated unless the context 
 
 ## Yolo defaults to True
 
-**Decision**: The `--yolo` flag defaults to True (skip permission prompts).
+**Decision**: The default is YOLO (`yolo = true`). Users opt out with `--no-yolo`.
 
-**Rationale**: wiggum is designed for automated loops where the agent runs unattended. Requiring permission prompts would defeat the purpose. Users who want safety use `--no-yolo` or `allow_paths`.
+**Rationale**: wiggum's core use case is unattended automation loops. Prompting for permissions by default undermines that workflow. Users who want tighter controls can use `--no-yolo` and/or `allow_paths`.
+
+## Completed tasks for prune/changelog are Done-section scoped
+
+**Decision**: `prune` and `changelog` treat completed tasks as checkboxes under `## Done` only.
+
+**Rationale**: Checked boxes in other sections (for example, `## Todo`) should not be interpreted as release/prune-complete work. This prevents false removals and misleading changelog entries.
 
 ## Single task per loop iteration
 

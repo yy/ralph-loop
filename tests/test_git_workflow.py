@@ -87,7 +87,7 @@ class TestGitSafetyDryRun:
             result = runner.invoke(app, ["run", "--dry-run", "--agent", "codex"])
 
         assert result.exit_code == 0
-        assert "Command: codex --json <prompt>" in result.output
+        assert "Command: codex --yolo --json <prompt>" in result.output
 
 
 class TestGitSafetyConfig:

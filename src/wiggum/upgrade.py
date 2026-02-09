@@ -7,7 +7,7 @@ from typing import Optional
 
 # Config schema - all known config options with defaults
 WIGGUM_CONFIG_DEFAULTS = {
-    "security": {"yolo": False, "allow_paths": ""},
+    "security": {"yolo": True, "allow_paths": ""},
     "loop": {
         "max_iterations": 10,
         "agent": "claude",

@@ -10,7 +10,7 @@ CONFIG_FILE = ".wiggum.toml"
 # Format: {section: {key: (default_value, expected_type)}}
 CONFIG_SCHEMA: dict[str, dict[str, tuple]] = {
     "security": {
-        "yolo": (False, bool),
+        "yolo": (True, bool),
         "allow_paths": ("", str),
     },
     "loop": {
@@ -252,7 +252,7 @@ def resolve_run_config(
 
     # Resolve security config (CLI flags override config)
     if yolo is None:
-        resolved_yolo = security_config.get("yolo", False)
+        resolved_yolo = security_config.get("yolo", True)
     else:
         resolved_yolo = yolo
     resolved_allow_paths = allow_paths
